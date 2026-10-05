@@ -10,47 +10,59 @@ enum CornerPosition {
 
 class ExpenseCategory {
   final String id;
-  final String title;
+  final String latinTitle;
+  final String thaiTitle;
   final IconData icon;
   final Color color;
   final CornerPosition corner;
+  final String romanNumeral;
 
   const ExpenseCategory({
     required this.id,
-    required this.title,
+    required this.latinTitle,
+    required this.thaiTitle,
     required this.icon,
     required this.color,
     required this.corner,
+    required this.romanNumeral,
   });
 
   static const List<ExpenseCategory> defaultCorners = [
     ExpenseCategory(
       id: 'food',
-      title: 'อาหาร & เครื่องดื่ม',
-      icon: Icons.restaurant_rounded,
-      color: AppColors.catFood,
+      latinTitle: 'TAVERNA',
+      thaiTitle: 'เสบียง & งานเลี้ยง',
+      icon: Icons.wine_bar_rounded,
+      color: AppColors.vaultTaverna,
       corner: CornerPosition.topLeft,
+      romanNumeral: 'I',
     ),
     ExpenseCategory(
       id: 'transport',
-      title: 'เดินทาง & น้ำมัน',
-      icon: Icons.directions_car_rounded,
-      color: AppColors.catTransport,
+      latinTitle: 'QUADRIGA',
+      thaiTitle: 'รถม้า & การสัญจร',
+      icon: Icons.directions_transit_filled_rounded,
+      color: AppColors.vaultQuadriga,
       corner: CornerPosition.topRight,
+      romanNumeral: 'II',
     ),
     ExpenseCategory(
       id: 'shopping',
-      title: 'ช้อปปิ้ง & สินค้า',
-      icon: Icons.shopping_bag_rounded,
-      color: AppColors.catShopping,
+      latinTitle: 'FORUM',
+      thaiTitle: 'ตลาดการค้า & สินค้า',
+      icon: Icons.storefront_rounded,
+      color: AppColors.vaultForum,
       corner: CornerPosition.bottomLeft,
+      romanNumeral: 'III',
     ),
     ExpenseCategory(
       id: 'bills',
-      title: 'บิล & ค่าใช้จ่าย',
-      icon: Icons.receipt_long_rounded,
-      color: AppColors.catBills,
+      latinTitle: 'TRIBUTUM',
+      thaiTitle: 'ส่วยหลวง & บิลประจำ',
+      icon: Icons.account_balance_rounded,
+      color: AppColors.vaultTributum,
       corner: CornerPosition.bottomRight,
+      romanNumeral: 'IV',
     ),
   ];
 }

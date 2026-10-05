@@ -15,10 +15,10 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
   final _amountController = TextEditingController();
   final _noteController = TextEditingController();
   String _selectedSource = 'เงินสด (Cash)';
-  Color _sourceColor = const Color(0xFF10B981);
+  Color _sourceColor = AppColors.gold;
 
   final List<Map<String, dynamic>> _sources = [
-    {'name': 'เงินสด (Cash)', 'color': const Color(0xFF10B981)},
+    {'name': 'เงินสด (Cash)', 'color': AppColors.gold},
     {'name': 'PromptPay', 'color': const Color(0xFF003D79)},
     {'name': 'TrueMoney', 'color': const Color(0xFFFA5A00)},
     {'name': 'K PLUS', 'color': const Color(0xFF138F46)},
@@ -48,8 +48,8 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
       dateTime: DateTime.now(),
       bankName: _selectedSource,
       bankColor: _sourceColor,
-      referenceNo: 'MANUAL-${DateTime.now().millisecondsSinceEpoch.toString().substring(6)}',
-      note: 'บันทึกด่วนแบบไม่ต้องใช้สลิป',
+      referenceNo: 'MINT-${DateTime.now().millisecondsSinceEpoch.toString().substring(6)}',
+      note: 'สลักด่วนไร้สลิป • บันทึกเข้าคลัง',
     );
 
     widget.onCardCreated(newItem);
@@ -65,9 +65,10 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
         top: 24,
         bottom: MediaQuery.of(context).viewInsets.bottom + 24,
       ),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+        border: Border.all(color: AppColors.gold.withValues(alpha: 0.35), width: 1.5),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -76,13 +77,20 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                '⚡ บันทึกการ์ดด่วน (Quick Add)',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
-                ),
+              Row(
+                children: const [
+                  Icon(Icons.shield_rounded, color: AppColors.gold, size: 20),
+                  SizedBox(width: 8),
+                  Text(
+                    'สลักสลิปด่วน (Quick Deposit)',
+                    style: TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 0.5,
+                      color: AppColors.gold,
+                    ),
+                  ),
+                ],
               ),
               IconButton(
                 onPressed: () => Navigator.of(context).pop(),
@@ -100,26 +108,30 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
             style: const TextStyle(
               fontSize: 32,
               fontWeight: FontWeight.bold,
-              color: AppColors.primary,
+              color: AppColors.goldBright,
             ),
             decoration: InputDecoration(
               prefixText: '฿ ',
               prefixStyle: const TextStyle(
                 fontSize: 32,
                 fontWeight: FontWeight.bold,
-                color: AppColors.primary,
+                color: AppColors.goldBright,
               ),
               hintText: '0.00',
               hintStyle: TextStyle(
                 fontSize: 32,
                 fontWeight: FontWeight.bold,
-                color: AppColors.textMuted.withValues(alpha: 0.5),
+                color: AppColors.textMuted.withValues(alpha: 0.4),
               ),
               filled: true,
               fillColor: AppColors.background,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(16),
-                borderSide: BorderSide.none,
+                borderSide: BorderSide(color: AppColors.gold.withValues(alpha: 0.3)),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide(color: AppColors.gold.withValues(alpha: 0.3)),
               ),
             ),
           ),
@@ -128,9 +140,9 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
           // Note Input
           TextField(
             controller: _noteController,
-            style: const TextStyle(color: AppColors.textPrimary),
+            style: const TextStyle(color: AppColors.marbleWhite),
             decoration: InputDecoration(
-              hintText: 'ชื่อร้าน หรือ รายละเอียด (เช่น กาแฟอเมซอน)',
+              hintText: 'สลักชื่อร้านค้า หรือ รายการจ่าย (เช่น กาแฟยามเช้า)',
               hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 13),
               filled: true,
               fillColor: AppColors.background,
@@ -148,12 +160,13 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
             child: Row(
               children: _sources.map((s) {
                 final isSelected = _selectedSource == s['name'];
+                final color = s['color'] as Color;
                 return Padding(
                   padding: const EdgeInsets.only(right: 8),
                   child: ChoiceChip(
                     label: Text(s['name'] as String),
                     selected: isSelected,
-                    selectedColor: (s['color'] as Color).withValues(alpha: 0.3),
+                    selectedColor: color.withValues(alpha: 0.3),
                     backgroundColor: AppColors.background,
                     labelStyle: TextStyle(
                       fontSize: 12,
@@ -161,13 +174,13 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
                       color: isSelected ? Colors.white : AppColors.textSecondary,
                     ),
                     side: BorderSide(
-                      color: isSelected ? (s['color'] as Color) : Colors.transparent,
+                      color: isSelected ? color : Colors.transparent,
                     ),
                     onSelected: (val) {
                       if (val) {
                         setState(() {
                           _selectedSource = s['name'] as String;
-                          _sourceColor = s['color'] as Color;
+                          _sourceColor = color;
                         });
                       }
                     },
@@ -185,16 +198,16 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
             child: ElevatedButton(
               onPressed: _submit,
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
+                backgroundColor: AppColors.gold,
+                foregroundColor: const Color(0xFF0F172A),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
                 ),
                 elevation: 0,
               ),
               child: const Text(
-                'สร้างการ์ดลงกอง Swipe',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                'นำเข้าสู่กองสลิปคลังหลวง',
+                style: TextStyle(fontSize: 15.5, fontWeight: FontWeight.w900),
               ),
             ),
           ),

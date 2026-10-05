@@ -22,7 +22,7 @@ class MonetaApp extends StatelessWidget {
     return MaterialApp(
       title: 'Moneta',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.darkTheme,
+      theme: AppTheme.romanDarkTheme,
       home: const SwipeFeedScreen(),
     );
   }

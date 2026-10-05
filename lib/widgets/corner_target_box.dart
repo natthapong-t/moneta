@@ -22,37 +22,48 @@ class CornerTargetBox extends StatelessWidget {
     final currencyFormatter = NumberFormat('#,##0', 'th_TH');
 
     return AnimatedScale(
-      scale: isHovered ? 1.08 : 1.0,
+      scale: isHovered ? 1.09 : 1.0,
       duration: const Duration(milliseconds: 200),
-      curve: Curves.easeOutCubic,
+      curve: Curves.easeOutBack,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         curve: Curves.easeOutCubic,
-        width: 155,
+        width: 158,
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(
+          // Roman Temple Vault styling (Arch rounded top)
           color: isHovered
-              ? category.color.withValues(alpha: 0.22)
-              : AppColors.surface.withValues(alpha: 0.85),
-          borderRadius: BorderRadius.circular(16),
+              ? category.color.withValues(alpha: 0.25)
+              : AppColors.surface.withValues(alpha: 0.90),
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(20),
+            topRight: Radius.circular(20),
+            bottomLeft: Radius.circular(12),
+            bottomRight: Radius.circular(12),
+          ),
           border: Border.all(
             color: isHovered
-                ? category.color
-                : category.color.withValues(alpha: 0.35),
-            width: isHovered ? 2.2 : 1.0,
+                ? AppColors.gold
+                : category.color.withValues(alpha: 0.45),
+            width: isHovered ? 2.0 : 1.2,
           ),
           boxShadow: [
-            if (isHovered)
+            if (isHovered) ...[
               BoxShadow(
-                color: category.color.withValues(alpha: 0.4),
-                blurRadius: 18,
+                color: category.color.withValues(alpha: 0.45),
+                blurRadius: 20,
                 spreadRadius: 2,
-              )
-            else
+              ),
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.25),
-                blurRadius: 8,
-                offset: const Offset(0, 3),
+                color: AppColors.gold.withValues(alpha: 0.3),
+                blurRadius: 10,
+                offset: const Offset(0, 0),
+              ),
+            ] else
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.4),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
               ),
           ],
         ),
@@ -60,64 +71,97 @@ class CornerTargetBox extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(6),
-                  decoration: BoxDecoration(
-                    color: category.color.withValues(alpha: 0.2),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    category.icon,
-                    size: 16,
-                    color: isHovered ? Colors.white : category.color,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    category.title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: isHovered ? Colors.white : AppColors.textPrimary,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 6),
+            // Top Row: Roman Numeral & Icon
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  '฿ ${currencyFormatter.format(totalAmount)}',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    color: isHovered ? category.color : AppColors.textSecondary,
-                  ),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(5),
+                      decoration: BoxDecoration(
+                        color: category.color.withValues(alpha: 0.2),
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: isHovered ? AppColors.gold : category.color.withValues(alpha: 0.4),
+                          width: 1,
+                        ),
+                      ),
+                      child: Icon(
+                        category.icon,
+                        size: 15,
+                        color: isHovered ? AppColors.gold : category.color,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      category.romanNumeral,
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1.0,
+                        color: isHovered ? AppColors.gold : AppColors.textMuted,
+                      ),
+                    ),
+                  ],
                 ),
                 if (itemCount > 0)
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
                     decoration: BoxDecoration(
-                      color: category.color.withValues(alpha: 0.2),
+                      color: category.color.withValues(alpha: 0.25),
                       borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: category.color.withValues(alpha: 0.5),
+                        width: 0.8,
+                      ),
                     ),
                     child: Text(
-                      '$itemCount',
+                      '$itemCount ใบ',
                       style: TextStyle(
-                        fontSize: 10,
+                        fontSize: 9.5,
                         fontWeight: FontWeight.bold,
                         color: category.color,
                       ),
                     ),
                   ),
               ],
+            ),
+            const SizedBox(height: 6),
+
+            // Latin Title in Roman Capitals
+            Text(
+              category.latinTitle,
+              style: TextStyle(
+                fontSize: 12.5,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 1.2,
+                color: isHovered ? AppColors.gold : AppColors.marbleWhite,
+              ),
+            ),
+
+            // Thai Subtitle
+            Text(
+              category.thaiTitle,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 10.5,
+                fontWeight: FontWeight.w500,
+                color: AppColors.textSecondary.withValues(alpha: 0.85),
+              ),
+            ),
+            const SizedBox(height: 4),
+
+            // Running Balance
+            Text(
+              '฿ ${currencyFormatter.format(totalAmount)}',
+              style: TextStyle(
+                fontSize: 12.5,
+                fontWeight: FontWeight.w700,
+                color: isHovered ? AppColors.goldBright : category.color,
+              ),
             ),
           ],
         ),

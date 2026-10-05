@@ -72,22 +72,46 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
       SnackBar(
         backgroundColor: AppColors.surfaceLight,
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14),
+          side: const BorderSide(color: AppColors.gold, width: 1),
+        ),
         content: Row(
           children: [
-            Icon(cat.icon, color: cat.color, size: 20),
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: cat.color.withValues(alpha: 0.2),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(cat.icon, color: AppColors.gold, size: 18),
+            ),
             const SizedBox(width: 10),
             Expanded(
-              child: Text(
-                'บันทึกเข้า "${cat.title}" ฿${NumberFormat('#,##0.00').format(item.amount)}',
-                style: const TextStyle(fontSize: 13, color: Colors.white),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'บรรจุเข้า ${cat.latinTitle} [${cat.thaiTitle}]',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.gold,
+                    ),
+                  ),
+                  Text(
+                    '฿${NumberFormat('#,##0.00').format(item.amount)}',
+                    style: const TextStyle(fontSize: 12, color: Colors.white),
+                  ),
+                ],
               ),
             ),
           ],
         ),
         action: SnackBarAction(
-          label: 'เลิกทำ (Undo)',
-          textColor: AppColors.primary,
+          label: 'เพิกถอน (Undo)',
+          textColor: AppColors.goldBright,
           onPressed: _undoLastAction,
         ),
         duration: const Duration(seconds: 3),
@@ -136,20 +160,20 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final foodCat = _getCategory(CornerPosition.topLeft);
-    final transportCat = _getCategory(CornerPosition.topRight);
-    final shoppingCat = _getCategory(CornerPosition.bottomLeft);
-    final billsCat = _getCategory(CornerPosition.bottomRight);
+    final tavernaCat = _getCategory(CornerPosition.topLeft);
+    final quadrigaCat = _getCategory(CornerPosition.topRight);
+    final forumCat = _getCategory(CornerPosition.bottomLeft);
+    final tributumCat = _getCategory(CornerPosition.bottomRight);
 
     return Scaffold(
       body: SafeArea(
         child: Stack(
           children: [
-            // Top Navigation Bar
+            // Top Navigation & Roman Emperor Header
             Positioned(
-              top: 8,
-              left: 16,
-              right: 16,
+              top: 6,
+              left: 14,
+              right: 14,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -158,15 +182,22 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: AppColors.primary.withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(12),
+                          color: AppColors.surface,
+                          borderRadius: BorderRadius.circular(14),
                           border: Border.all(
-                            color: AppColors.primary.withValues(alpha: 0.3),
+                            color: AppColors.gold.withValues(alpha: 0.5),
+                            width: 1.2,
                           ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColors.gold.withValues(alpha: 0.15),
+                              blurRadius: 10,
+                            ),
+                          ],
                         ),
                         child: const Icon(
-                          Icons.monetization_on_rounded,
-                          color: AppColors.primary,
+                          Icons.account_balance_rounded,
+                          color: AppColors.gold,
                           size: 20,
                         ),
                       ),
@@ -174,20 +205,34 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            'MONETA',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w900,
-                              letterSpacing: 1.2,
-                              color: AppColors.textPrimary,
-                            ),
+                          Row(
+                            children: const [
+                              Text(
+                                'MONETA',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w900,
+                                  letterSpacing: 1.8,
+                                  color: AppColors.gold,
+                                ),
+                              ),
+                              SizedBox(width: 6),
+                              Text(
+                                '• TEMPLUM',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  letterSpacing: 1.0,
+                                  color: AppColors.textMuted,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
                           ),
-                          Text(
-                            'Swipe & Categorize',
+                          const Text(
+                            'ปัดสลิป คุมคลังหลวง',
                             style: TextStyle(
                               fontSize: 11,
-                              color: AppColors.textSecondary.withValues(alpha: 0.8),
+                              color: AppColors.textSecondary,
                             ),
                           ),
                         ],
@@ -196,40 +241,65 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
                   ),
                   Row(
                     children: [
-                      if (_categorizedCards.isNotEmpty)
-                        IconButton(
-                          tooltip: 'เลิกทำ (Undo)',
-                          onPressed: _undoLastAction,
-                          icon: const Icon(
-                            Icons.undo_rounded,
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
+                      // Laurel Wreath Streak Badge
                       Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 5,
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        margin: const EdgeInsets.only(right: 6),
+                        decoration: BoxDecoration(
+                          color: AppColors.vaultTributum.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: AppColors.vaultTributum.withValues(alpha: 0.4),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: const [
+                            Text('🌿', style: TextStyle(fontSize: 12)),
+                            SizedBox(width: 4),
+                            Text(
+                              '7 วัน',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF6EE7B7),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      // Pending Cards Pill
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 9,
+                          vertical: 4.5,
                         ),
                         decoration: BoxDecoration(
                           color: AppColors.surface,
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: AppColors.surfaceLight),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: AppColors.gold.withValues(alpha: 0.4),
+                          ),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             const Icon(
                               Icons.style_rounded,
-                              size: 14,
-                              color: AppColors.primary,
+                              size: 13,
+                              color: AppColors.gold,
                             ),
-                            const SizedBox(width: 6),
+                            const SizedBox(width: 5),
                             Text(
-                              'เหลือ ${_pendingCards.length} ใบ',
+                              '${_pendingCards.length} สลิป',
                               style: const TextStyle(
-                                fontSize: 12,
+                                fontSize: 11.5,
                                 fontWeight: FontWeight.bold,
-                                color: AppColors.textPrimary,
+                                color: AppColors.marbleWhite,
                               ),
                             ),
                           ],
@@ -241,80 +311,79 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
               ),
             ),
 
-            // Top-Left Corner Box (Food)
+            // Top-Left Vault (I. Taverna)
             Positioned(
-              top: 68,
+              top: 66,
               left: 14,
               child: CornerTargetBox(
-                category: foodCat,
+                category: tavernaCat,
                 isHovered: _hoveredCorner == CornerPosition.topLeft,
-                totalAmount: _categoryTotals[foodCat.id] ?? 0.0,
-                itemCount: _categoryCounts[foodCat.id] ?? 0,
+                totalAmount: _categoryTotals[tavernaCat.id] ?? 0.0,
+                itemCount: _categoryCounts[tavernaCat.id] ?? 0,
               ),
             ),
 
-            // Top-Right Corner Box (Transport)
+            // Top-Right Vault (II. Quadriga)
             Positioned(
-              top: 68,
+              top: 66,
               right: 14,
               child: CornerTargetBox(
-                category: transportCat,
+                category: quadrigaCat,
                 isHovered: _hoveredCorner == CornerPosition.topRight,
-                totalAmount: _categoryTotals[transportCat.id] ?? 0.0,
-                itemCount: _categoryCounts[transportCat.id] ?? 0,
+                totalAmount: _categoryTotals[quadrigaCat.id] ?? 0.0,
+                itemCount: _categoryCounts[quadrigaCat.id] ?? 0,
               ),
             ),
 
-            // Bottom-Left Corner Box (Shopping)
+            // Bottom-Left Vault (III. Forum)
             Positioned(
               bottom: 84,
               left: 14,
               child: CornerTargetBox(
-                category: shoppingCat,
+                category: forumCat,
                 isHovered: _hoveredCorner == CornerPosition.bottomLeft,
-                totalAmount: _categoryTotals[shoppingCat.id] ?? 0.0,
-                itemCount: _categoryCounts[shoppingCat.id] ?? 0,
+                totalAmount: _categoryTotals[forumCat.id] ?? 0.0,
+                itemCount: _categoryCounts[forumCat.id] ?? 0,
               ),
             ),
 
-            // Bottom-Right Corner Box (Bills)
+            // Bottom-Right Vault (IV. Tributum)
             Positioned(
               bottom: 84,
               right: 14,
               child: CornerTargetBox(
-                category: billsCat,
+                category: tributumCat,
                 isHovered: _hoveredCorner == CornerPosition.bottomRight,
-                totalAmount: _categoryTotals[billsCat.id] ?? 0.0,
-                itemCount: _categoryCounts[billsCat.id] ?? 0,
+                totalAmount: _categoryTotals[tributumCat.id] ?? 0.0,
+                itemCount: _categoryCounts[tributumCat.id] ?? 0,
               ),
             ),
 
-            // Center Card Stack or Empty State
+            // Center Card Stack or Roman Triumph Empty State
             Center(
               child: _pendingCards.isEmpty
-                  ? _buildEmptyState()
+                  ? _buildRomanTriumphState()
                   : _buildCardStack(),
             ),
 
             // Bottom Floating Controls
             Positioned(
               bottom: 16,
-              left: 20,
-              right: 20,
+              left: 18,
+              right: 18,
               child: Row(
                 children: [
                   Expanded(
                     child: ElevatedButton.icon(
                       onPressed: _openQuickAdd,
-                      icon: const Icon(Icons.flash_on_rounded, size: 18),
+                      icon: const Icon(Icons.flash_on_rounded, size: 18, color: AppColors.gold),
                       label: const Text(
-                        'บันทึกด่วน (Quick Add)',
-                        style: TextStyle(fontWeight: FontWeight.bold),
+                        'บันทึกด่วน (Quick Deposit)',
+                        style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.gold),
                       ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.surface,
-                        foregroundColor: AppColors.primary,
-                        side: const BorderSide(color: AppColors.primary, width: 1.2),
+                        side: const BorderSide(color: AppColors.gold, width: 1.2),
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),
@@ -322,14 +391,26 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 10),
+                  if (_categorizedCards.isNotEmpty)
+                    IconButton.filled(
+                      tooltip: 'เพิกถอนการกระทำล่าสุด (Undo)',
+                      onPressed: _undoLastAction,
+                      icon: const Icon(Icons.undo_rounded),
+                      style: IconButton.styleFrom(
+                        backgroundColor: AppColors.surface,
+                        foregroundColor: AppColors.gold,
+                        side: BorderSide(color: AppColors.gold.withValues(alpha: 0.4)),
+                        padding: const EdgeInsets.all(14),
+                      ),
+                    ),
                   IconButton.filled(
                     tooltip: 'รีเซ็ตข้อมูลตัวอย่าง',
                     onPressed: _resetToSample,
                     icon: const Icon(Icons.refresh_rounded),
                     style: IconButton.styleFrom(
                       backgroundColor: AppColors.surfaceLight,
-                      foregroundColor: AppColors.textPrimary,
+                      foregroundColor: AppColors.textSecondary,
                       padding: const EdgeInsets.all(14),
                     ),
                   ),
@@ -382,7 +463,7 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildRomanTriumphState() {
     double grandTotal = 0;
     for (var val in _categoryTotals.values) {
       grandTotal += val;
@@ -391,16 +472,16 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
     final currencyFormatter = NumberFormat('#,##0.00', 'th_TH');
 
     return Container(
-      width: 320,
+      width: 324,
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: AppColors.surfaceLight),
+        border: Border.all(color: AppColors.gold, width: 1.5),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.3),
-            blurRadius: 20,
+            color: AppColors.gold.withValues(alpha: 0.2),
+            blurRadius: 24,
             offset: const Offset(0, 10),
           ),
         ],
@@ -408,55 +489,61 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
+          // Roman Laurel & Victory Medallion
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: 0.15),
+              color: AppColors.gold.withValues(alpha: 0.15),
               shape: BoxShape.circle,
+              border: Border.all(color: AppColors.gold, width: 2),
             ),
             child: const Icon(
-              Icons.check_circle_outline_rounded,
-              color: AppColors.primary,
-              size: 48,
+              Icons.workspace_premium_rounded,
+              color: AppColors.gold,
+              size: 46,
             ),
           ),
           const SizedBox(height: 16),
           const Text(
-            'เคลียร์สลิปทั้งหมดแล้ว! 🎉',
+            'TRIUMPH! ฉลองชัยชนะ 🏆',
             style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
+              fontSize: 19,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 1.2,
+              color: AppColors.gold,
             ),
           ),
           const SizedBox(height: 6),
           Text(
-            'คุณจัดระเบียบรายจ่ายครบ ${_categorizedCards.length} รายการ',
+            'ท่านได้จัดเก็บสลิป ${_categorizedCards.length} รายการเข้าสู่คลังหลวงอย่างสง่างาม ไร้หนี้สินตกค้าง',
+            textAlign: TextAlign.center,
             style: const TextStyle(
-              fontSize: 13,
+              fontSize: 12.5,
               color: AppColors.textSecondary,
+              height: 1.4,
             ),
           ),
           const SizedBox(height: 16),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
               color: AppColors.background,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: AppColors.surfaceLight),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text(
-                  'ยอดรวมที่บันทึก',
+                  'ทรัพย์ที่จัดสรรในคลัง',
                   style: TextStyle(fontSize: 12, color: AppColors.textMuted),
                 ),
                 Text(
                   '฿ ${currencyFormatter.format(grandTotal)}',
                   style: const TextStyle(
-                    fontSize: 16,
+                    fontSize: 17,
                     fontWeight: FontWeight.bold,
-                    color: AppColors.primary,
+                    color: AppColors.goldBright,
                   ),
                 ),
               ],
@@ -468,10 +555,10 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
             child: ElevatedButton.icon(
               onPressed: _resetToSample,
               icon: const Icon(Icons.replay_rounded, size: 18),
-              label: const Text('ทดสอบใหม่ (โหลดสลิปตัวอย่าง)'),
+              label: const Text('เสกสลิปใหม่มาทดสอบ (Reset Deck)'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
+                backgroundColor: AppColors.gold,
+                foregroundColor: const Color(0xFF0F172A),
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(14),
