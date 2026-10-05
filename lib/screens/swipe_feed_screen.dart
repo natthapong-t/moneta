@@ -66,57 +66,6 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
       _categoryCounts[cat.id] = (_categoryCounts[cat.id] ?? 0) + 1;
       _hoveredCorner = null;
     });
-
-    ScaffoldMessenger.of(context).clearSnackBars();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        backgroundColor: AppColors.surfaceLight,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(14),
-          side: const BorderSide(color: AppColors.gold, width: 1),
-        ),
-        content: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(
-                color: cat.color.withValues(alpha: 0.2),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(cat.icon, color: AppColors.gold, size: 18),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'บรรจุเข้า ${cat.latinTitle} [${cat.thaiTitle}]',
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.gold,
-                    ),
-                  ),
-                  Text(
-                    '฿${NumberFormat('#,##0.00').format(item.amount)}',
-                    style: const TextStyle(fontSize: 12, color: Colors.white),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-        action: SnackBarAction(
-          label: 'เพิกถอน (Undo)',
-          textColor: AppColors.goldBright,
-          onPressed: _undoLastAction,
-        ),
-        duration: const Duration(seconds: 3),
-      ),
-    );
   }
 
   void _undoLastAction() {
@@ -212,24 +161,14 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
                                 style: TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.w900,
-                                  letterSpacing: 1.8,
+                                  letterSpacing: 1.5,
                                   color: AppColors.gold,
-                                ),
-                              ),
-                              SizedBox(width: 6),
-                              Text(
-                                '• TEMPLUM',
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  letterSpacing: 1.0,
-                                  color: AppColors.textMuted,
-                                  fontWeight: FontWeight.bold,
                                 ),
                               ),
                             ],
                           ),
                           const Text(
-                            'ปัดสลิป คุมคลังหลวง',
+                            'ปัดสลิป จัดการค่าใช้จ่าย',
                             style: TextStyle(
                               fontSize: 11,
                               color: AppColors.textSecondary,
@@ -241,7 +180,7 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
                   ),
                   Row(
                     children: [
-                      // Laurel Wreath Streak Badge
+                      // Streak Badge
                       Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 8,
@@ -258,7 +197,7 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: const [
-                            Text('🌿', style: TextStyle(fontSize: 12)),
+                            Text('🔥', style: TextStyle(fontSize: 12)),
                             SizedBox(width: 4),
                             Text(
                               '7 วัน',
@@ -378,7 +317,7 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
                       onPressed: _openQuickAdd,
                       icon: const Icon(Icons.flash_on_rounded, size: 18, color: AppColors.gold),
                       label: const Text(
-                        'บันทึกด่วน (Quick Deposit)',
+                        'บันทึกด่วน',
                         style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.gold),
                       ),
                       style: ElevatedButton.styleFrom(
@@ -394,7 +333,7 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
                   const SizedBox(width: 10),
                   if (_categorizedCards.isNotEmpty)
                     IconButton.filled(
-                      tooltip: 'เพิกถอนการกระทำล่าสุด (Undo)',
+                      tooltip: 'เลิกทำรายการล่าสุด (Undo)',
                       onPressed: _undoLastAction,
                       icon: const Icon(Icons.undo_rounded),
                       style: IconButton.styleFrom(
@@ -505,17 +444,17 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
           ),
           const SizedBox(height: 16),
           const Text(
-            'TRIUMPH! ฉลองชัยชนะ 🏆',
+            'จัดหมวดหมู่ครบแล้ว! 🎉',
             style: TextStyle(
               fontSize: 19,
               fontWeight: FontWeight.w900,
-              letterSpacing: 1.2,
+              letterSpacing: 0.5,
               color: AppColors.gold,
             ),
           ),
           const SizedBox(height: 6),
           Text(
-            'ท่านได้จัดเก็บสลิป ${_categorizedCards.length} รายการเข้าสู่คลังหลวงอย่างสง่างาม ไร้หนี้สินตกค้าง',
+            'คุณได้จัดหมวดหมู่สลิป ${_categorizedCards.length} รายการเรียบร้อยแล้ว',
             textAlign: TextAlign.center,
             style: const TextStyle(
               fontSize: 12.5,
@@ -535,7 +474,7 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text(
-                  'ทรัพย์ที่จัดสรรในคลัง',
+                  'ยอดรวมทั้งหมด',
                   style: TextStyle(fontSize: 12, color: AppColors.textMuted),
                 ),
                 Text(
@@ -555,7 +494,7 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
             child: ElevatedButton.icon(
               onPressed: _resetToSample,
               icon: const Icon(Icons.replay_rounded, size: 18),
-              label: const Text('เสกสลิปใหม่มาทดสอบ (Reset Deck)'),
+              label: const Text('รีเซ็ตรายการทดสอบ (Reset Cards)'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.gold,
                 foregroundColor: const Color(0xFF0F172A),

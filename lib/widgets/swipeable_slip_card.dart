@@ -273,13 +273,13 @@ class _SwipeableSlipCardState extends State<SwipeableSlipCard>
                       mainAxisSize: MainAxisSize.min,
                       children: const [
                         Icon(
-                          Icons.verified_rounded,
+                          Icons.check_circle_rounded,
                           color: Colors.white,
                           size: 13,
                         ),
                         SizedBox(width: 4),
                         Text(
-                          'MINTED • สำเร็จ',
+                          'สำเร็จ',
                           style: TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.bold,
@@ -302,13 +302,11 @@ class _SwipeableSlipCardState extends State<SwipeableSlipCard>
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: const [
-                        Icon(Icons.shield_outlined, size: 12, color: Color(0xFF94A3B8)),
-                        SizedBox(width: 4),
                         Text(
-                          'DENARII • ยอดชำระ',
+                          'ยอดชำระ',
                           style: TextStyle(
                             fontSize: 11,
-                            letterSpacing: 1.0,
+                            letterSpacing: 0.5,
                             color: Color(0xFF64748B),
                             fontWeight: FontWeight.bold,
                           ),
@@ -361,7 +359,7 @@ class _SwipeableSlipCardState extends State<SwipeableSlipCard>
               if (widget.item.note != null && widget.item.note!.isNotEmpty) ...[
                 const SizedBox(height: 7),
                 _buildMetaRow(
-                  label: 'บันทึกสลัก',
+                  label: 'บันทึกช่วยจำ',
                   value: widget.item.note!,
                   isMuted: true,
                 ),
@@ -375,7 +373,7 @@ class _SwipeableSlipCardState extends State<SwipeableSlipCard>
 
               const SizedBox(height: 7),
               _buildMetaRow(
-                label: 'ตราสารเลขที่',
+                label: 'เลขที่อ้างอิง',
                 value: widget.item.referenceNo,
                 isSmall: true,
               ),
@@ -395,14 +393,14 @@ class _SwipeableSlipCardState extends State<SwipeableSlipCard>
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: const [
                     Icon(
-                      Icons.account_balance_outlined,
-                      size: 13,
+                      Icons.swipe_rounded,
+                      size: 14,
                       color: Color(0xFF786C58),
                     ),
                     SizedBox(width: 6),
                     Flexible(
                       child: Text(
-                        'ปัดสลิปเพื่อบรรจุเข้าคลังหลวงทั้ง 4',
+                        'ปัดสลิปไปยัง 4 มุมเพื่อจัดหมวดหมู่',
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           fontSize: 10.5,

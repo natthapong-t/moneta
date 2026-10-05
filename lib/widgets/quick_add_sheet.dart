@@ -48,8 +48,8 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
       dateTime: DateTime.now(),
       bankName: _selectedSource,
       bankColor: _sourceColor,
-      referenceNo: 'MINT-${DateTime.now().millisecondsSinceEpoch.toString().substring(6)}',
-      note: 'สลักด่วนไร้สลิป • บันทึกเข้าคลัง',
+      referenceNo: 'MANUAL-${DateTime.now().millisecondsSinceEpoch.toString().substring(6)}',
+      note: 'บันทึกด่วน',
     );
 
     widget.onCardCreated(newItem);
@@ -79,10 +79,10 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
             children: [
               Row(
                 children: const [
-                  Icon(Icons.shield_rounded, color: AppColors.gold, size: 20),
+                  Icon(Icons.edit_note_rounded, color: AppColors.gold, size: 22),
                   SizedBox(width: 8),
                   Text(
-                    'สลักสลิปด่วน (Quick Deposit)',
+                    'บันทึกรายการด่วน',
                     style: TextStyle(
                       fontSize: 17,
                       fontWeight: FontWeight.bold,
@@ -142,7 +142,7 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
             controller: _noteController,
             style: const TextStyle(color: AppColors.marbleWhite),
             decoration: InputDecoration(
-              hintText: 'สลักชื่อร้านค้า หรือ รายการจ่าย (เช่น กาแฟยามเช้า)',
+              hintText: 'ชื่อร้านค้า หรือ รายการ (เช่น กาแฟ, ข้าวกลางวัน)',
               hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 13),
               filled: true,
               fillColor: AppColors.background,
@@ -206,7 +206,7 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
                 elevation: 0,
               ),
               child: const Text(
-                'นำเข้าสู่กองสลิปคลังหลวง',
+                'บันทึกรายการ',
                 style: TextStyle(fontSize: 15.5, fontWeight: FontWeight.w900),
               ),
             ),
