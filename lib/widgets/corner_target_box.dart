@@ -8,6 +8,7 @@ class CornerTargetBox extends StatelessWidget {
   final bool isHovered;
   final double totalAmount;
   final int itemCount;
+  final VoidCallback? onTap;
 
   const CornerTargetBox({
     super.key,
@@ -15,16 +16,20 @@ class CornerTargetBox extends StatelessWidget {
     required this.isHovered,
     this.totalAmount = 0.0,
     this.itemCount = 0,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     final currencyFormatter = NumberFormat('#,##0', 'th_TH');
 
-    return AnimatedScale(
-      scale: isHovered ? 1.09 : 1.0,
-      duration: const Duration(milliseconds: 200),
-      curve: Curves.easeOutBack,
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: AnimatedScale(
+        scale: isHovered ? 1.09 : 1.0,
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOutBack,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         curve: Curves.easeOutCubic,
@@ -166,6 +171,7 @@ class CornerTargetBox extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }

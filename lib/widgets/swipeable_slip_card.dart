@@ -92,20 +92,40 @@ class _SwipeableSlipCardState extends State<SwipeableSlipCard>
   void _onPanEnd(DragEndDetails details) {
     if (!widget.isTopCard) return;
 
-    final targetCorner = _activeCorner;
+    CornerPosition? targetCorner = _activeCorner;
+
+    // Detect velocity-based flick if not already hovered in proximity
+    final velocity = details.velocity.pixelsPerSecond;
+    final speed = velocity.distance;
+
+    if (targetCorner == null && speed > 550) {
+      final vx = velocity.dx;
+      final vy = velocity.dy;
+
+      if (vx < 0 && vy < 0) {
+        targetCorner = CornerPosition.topLeft;
+      } else if (vx > 0 && vy < 0) {
+        targetCorner = CornerPosition.topRight;
+      } else if (vx < 0 && vy > 0) {
+        targetCorner = CornerPosition.bottomLeft;
+      } else if (vx > 0 && vy > 0) {
+        targetCorner = CornerPosition.bottomRight;
+      }
+    }
 
     if (targetCorner != null) {
       HapticFeedback.mediumImpact();
+      widget.onProximityChanged(targetCorner);
 
       final endOffset = Offset(
         targetCorner == CornerPosition.topLeft ||
                 targetCorner == CornerPosition.bottomLeft
-            ? -500.0
-            : 500.0,
+            ? -550.0
+            : 550.0,
         targetCorner == CornerPosition.topLeft ||
                 targetCorner == CornerPosition.topRight
-            ? -600.0
-            : 600.0,
+            ? -650.0
+            : 650.0,
       );
 
       _springAnimation = Tween<Offset>(
@@ -115,10 +135,10 @@ class _SwipeableSlipCardState extends State<SwipeableSlipCard>
         CurvedAnimation(parent: _springController, curve: Curves.easeInCubic),
       );
 
-      _springController.duration = const Duration(milliseconds: 200);
+      _springController.duration = const Duration(milliseconds: 180);
       _springController.forward(from: 0.0).then((_) {
         widget.onProximityChanged(null);
-        widget.onCategorized(targetCorner);
+        widget.onCategorized(targetCorner!);
       });
     } else {
       widget.onProximityChanged(null);

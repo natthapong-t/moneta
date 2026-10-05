@@ -66,5 +66,9 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Moneta needs access to photos to scan and import bank slips for expense tracking.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Moneta needs camera access to take pictures of bank receipts.</string>
 </dict>
 </plist>

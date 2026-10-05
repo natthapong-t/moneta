@@ -7,6 +7,8 @@ import '../models/expense_card_item.dart';
 import '../widgets/corner_target_box.dart';
 import '../widgets/quick_add_sheet.dart';
 import '../widgets/swipeable_slip_card.dart';
+import '../widgets/vault_details_sheet.dart';
+import '../services/slip_parser_service.dart';
 
 class SwipeFeedScreen extends StatefulWidget {
   const SwipeFeedScreen({super.key});
@@ -33,6 +35,71 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
     'shopping': 0,
     'bills': 0,
   };
+
+  final _slipParser = SlipParserService();
+  bool _isScanningSlips = false;
+
+  Future<void> _importSlipsFromGallery() async {
+    HapticFeedback.lightImpact();
+    final imagePaths = await _slipParser.pickSlipImages();
+    if (imagePaths.isEmpty) return;
+
+    if (!mounted) return;
+    setState(() {
+      _isScanningSlips = true;
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        backgroundColor: AppColors.surfaceLight,
+        content: Row(
+          children: [
+            const SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.gold),
+            ),
+            const SizedBox(width: 12),
+            Text(
+              'กำลังอ่านข้อมูลจาก ${imagePaths.length} สลิป...',
+              style: const TextStyle(color: Colors.white, fontSize: 13),
+            ),
+          ],
+        ),
+        duration: const Duration(seconds: 4),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+
+    final parsedItems = await _slipParser.parseSlipImages(imagePaths);
+
+    if (!mounted) return;
+    setState(() {
+      _isScanningSlips = false;
+      if (parsedItems.isNotEmpty) {
+        _pendingCards.insertAll(0, parsedItems);
+      }
+    });
+
+    HapticFeedback.mediumImpact();
+    ScaffoldMessenger.of(context).clearSnackBars();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        backgroundColor: AppColors.surface,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14),
+          side: const BorderSide(color: AppColors.gold),
+        ),
+        content: Text(
+          parsedItems.isNotEmpty
+              ? 'สแกนพบสลิป ${parsedItems.length} รายการ พร้อมให้ปัดเข้าหมวดหมู่แล้ว!'
+              : 'ตรวจไม่พบข้อมูลสลิปที่สมบูรณ์ในรูปที่เลือก',
+          style: const TextStyle(color: AppColors.marbleWhite, fontWeight: FontWeight.bold),
+        ),
+      ),
+    );
+  }
 
   @override
   void initState() {
@@ -100,6 +167,29 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
           HapticFeedback.lightImpact();
         },
       ),
+    );
+  }
+
+  void _openVaultDetails(ExpenseCategory cat) {
+    HapticFeedback.lightImpact();
+    final itemsInVault = _categorizedCards
+        .where((c) => c.assignedCategory?.id == cat.id)
+        .toList();
+
+    VaultDetailsSheet.show(
+      context: context,
+      category: cat,
+      items: itemsInVault,
+      onRestoreItem: (item) {
+        setState(() {
+          _categorizedCards.removeWhere((c) => c.id == item.id);
+          _pendingCards.insert(0, item.copyWith(assignedCategory: null));
+          _categoryTotals[cat.id] =
+              (_categoryTotals[cat.id] ?? 0.0) - item.amount;
+          _categoryCounts[cat.id] =
+              (_categoryCounts[cat.id] ?? 1) - 1;
+        });
+      },
     );
   }
 
@@ -250,7 +340,7 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
               ),
             ),
 
-            // Top-Left Vault (I. Taverna)
+            // Top-Left Vault (1. Food)
             Positioned(
               top: 66,
               left: 14,
@@ -259,10 +349,11 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
                 isHovered: _hoveredCorner == CornerPosition.topLeft,
                 totalAmount: _categoryTotals[tavernaCat.id] ?? 0.0,
                 itemCount: _categoryCounts[tavernaCat.id] ?? 0,
+                onTap: () => _openVaultDetails(tavernaCat),
               ),
             ),
 
-            // Top-Right Vault (II. Quadriga)
+            // Top-Right Vault (2. Transport)
             Positioned(
               top: 66,
               right: 14,
@@ -271,10 +362,11 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
                 isHovered: _hoveredCorner == CornerPosition.topRight,
                 totalAmount: _categoryTotals[quadrigaCat.id] ?? 0.0,
                 itemCount: _categoryCounts[quadrigaCat.id] ?? 0,
+                onTap: () => _openVaultDetails(quadrigaCat),
               ),
             ),
 
-            // Bottom-Left Vault (III. Forum)
+            // Bottom-Left Vault (3. Shopping)
             Positioned(
               bottom: 84,
               left: 14,
@@ -283,10 +375,11 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
                 isHovered: _hoveredCorner == CornerPosition.bottomLeft,
                 totalAmount: _categoryTotals[forumCat.id] ?? 0.0,
                 itemCount: _categoryCounts[forumCat.id] ?? 0,
+                onTap: () => _openVaultDetails(forumCat),
               ),
             ),
 
-            // Bottom-Right Vault (IV. Tributum)
+            // Bottom-Right Vault (4. Bills)
             Positioned(
               bottom: 84,
               right: 14,
@@ -295,6 +388,7 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
                 isHovered: _hoveredCorner == CornerPosition.bottomRight,
                 totalAmount: _categoryTotals[tributumCat.id] ?? 0.0,
                 itemCount: _categoryCounts[tributumCat.id] ?? 0,
+                onTap: () => _openVaultDetails(tributumCat),
               ),
             ),
 
@@ -330,7 +424,28 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 10),
+                  const SizedBox(width: 8),
+                  IconButton.filled(
+                    tooltip: 'สแกนสลิปจากอัลบั้มภาพ',
+                    onPressed: _isScanningSlips ? null : _importSlipsFromGallery,
+                    icon: _isScanningSlips
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: AppColors.gold,
+                            ),
+                          )
+                        : const Icon(Icons.document_scanner_rounded),
+                    style: IconButton.styleFrom(
+                      backgroundColor: AppColors.surface,
+                      foregroundColor: AppColors.gold,
+                      side: const BorderSide(color: AppColors.gold, width: 1.2),
+                      padding: const EdgeInsets.all(14),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
                   if (_categorizedCards.isNotEmpty)
                     IconButton.filled(
                       tooltip: 'เลิกทำรายการล่าสุด (Undo)',
@@ -492,12 +607,35 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton.icon(
-              onPressed: _resetToSample,
-              icon: const Icon(Icons.replay_rounded, size: 18),
-              label: const Text('รีเซ็ตรายการทดสอบ (Reset Cards)'),
+              onPressed: _isScanningSlips ? null : _importSlipsFromGallery,
+              icon: _isScanningSlips
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black),
+                    )
+                  : const Icon(Icons.document_scanner_rounded, size: 20),
+              label: const Text('สแกนสลิปจากอัลบั้ม (Scan Real Slips)'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.gold,
                 foregroundColor: const Color(0xFF0F172A),
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: _resetToSample,
+              icon: const Icon(Icons.replay_rounded, size: 18),
+              label: const Text('โหลดตัวอย่างสลิปมาลอง (Sample Deck)'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.gold,
+                side: const BorderSide(color: AppColors.surfaceLight),
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(14),
