@@ -206,8 +206,8 @@ class _SwipeableSlipCardState extends State<SwipeableSlipCard>
     NumberFormat currencyFormatter,
   ) {
     return Container(
-      width: 270,
-      height: 330,
+      width: 245,
+      height: 295,
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(20),
@@ -484,9 +484,9 @@ class _SwipeableSlipCardState extends State<SwipeableSlipCard>
     ExpenseCategory? activeCat,
   ) {
     return Container(
-      width: 270,
-      height: 330,
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      width: 245,
+      height: 295,
+      padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 11),
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(20),

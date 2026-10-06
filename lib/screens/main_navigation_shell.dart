@@ -193,10 +193,13 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
         .listen(
           (progress) {
             if (!mounted) return;
-
             setState(() {
+              final albumHint = (progress.currentSource != null &&
+                      progress.currentSource!.isNotEmpty)
+                  ? ' [${progress.currentSource}]'
+                  : '';
               _scanningStatus =
-                  'กำลังกวาดสลิป... ${progress.scanned}/${progress.total} (พบ ${progress.foundCount} สลิป)';
+                  'กำลังกวาดสลิป$albumHint... ${progress.scanned}/${progress.total} (พบ ${progress.foundCount} สลิป)';
 
               if (progress.newSlip != null) {
                 final newSlip = progress.newSlip!;

@@ -821,11 +821,15 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
               ),
             ),
 
-            // Center Card Stack or Cartoon Triumph Empty State
-            Center(
-              child: _pendingCards.isEmpty
-                  ? _buildCompletionState()
-                  : _buildCardStack(),
+            // Center Arena Card Stack: Strictly bounded between top vaults and bottom vaults
+            Positioned.fill(
+              top: 136,
+              bottom: 215,
+              child: Center(
+                child: _pendingCards.isEmpty
+                    ? _buildCompletionState()
+                    : _buildCardStack(),
+              ),
             ),
 
             // Arcade Action Controls Bar - Floating cleanly above the bottom dock at 76!
@@ -983,7 +987,7 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
     final isTop = index == 0;
 
     final double scale = 1.0 - (index * 0.05);
-    final double yOffset = index * 12.0;
+    final double yOffset = index * 7.0;
 
     return Transform.translate(
       offset: Offset(0, yOffset),
@@ -1015,8 +1019,8 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
     final currencyFormatter = NumberFormat('#,##0.00', 'th_TH');
 
     return Container(
-      width: 275,
-      padding: const EdgeInsets.all(20),
+      width: 250,
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(24),

@@ -32,8 +32,8 @@ class CornerTargetBox extends StatelessWidget {
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 150),
           curve: Curves.easeOutCubic,
-          width: 140,
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          width: 135,
+          padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 7),
           decoration: BoxDecoration(
             color: category.color,
             borderRadius: BorderRadius.circular(18),
