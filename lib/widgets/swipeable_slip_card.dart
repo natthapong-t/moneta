@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
@@ -190,6 +191,284 @@ class _SwipeableSlipCardState extends State<SwipeableSlipCard>
       );
     }
 
+    if (widget.item.imagePath != null && widget.item.imagePath!.isNotEmpty) {
+      return _buildActualSlipImageCard(activeCat, currencyFormatter);
+    }
+
+    return _buildSyntheticFallbackCard(currencyFormatter, dateFormatter, activeCat);
+  }
+
+  Widget _buildActualSlipImageCard(
+    ExpenseCategory? activeCat,
+    NumberFormat currencyFormatter,
+  ) {
+    return Container(
+      width: 322,
+      height: 490,
+      decoration: BoxDecoration(
+        color: const Color(0xFF131720),
+        borderRadius: BorderRadius.circular(22),
+        border: activeCat != null
+            ? Border.all(color: activeCat.color, width: 3.0)
+            : Border.all(color: const Color(0xFF2E3846), width: 1.5),
+        boxShadow: [
+          if (activeCat != null) ...[
+            BoxShadow(
+              color: activeCat.color.withValues(alpha: 0.55),
+              blurRadius: 28,
+              offset: const Offset(0, 8),
+            ),
+            BoxShadow(
+              color: AppColors.gold.withValues(alpha: 0.25),
+              blurRadius: 14,
+            ),
+          ] else ...[
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.5),
+              blurRadius: 22,
+              offset: const Offset(0, 12),
+            ),
+          ],
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: Stack(
+          children: [
+            // 1. The Actual Slip Image (Rendered directly)
+            Positioned.fill(
+              child: Container(
+                color: const Color(0xFF0F1218),
+                child: Center(
+                  child: _buildSlipImage(widget.item.imagePath!),
+                ),
+              ),
+            ),
+
+            // 2. Floating Amount Pill (Top Right)
+            Positioned(
+              top: 12,
+              right: 12,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.8),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: AppColors.gold.withValues(alpha: 0.7),
+                    width: 1.2,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.4),
+                      blurRadius: 8,
+                    ),
+                  ],
+                ),
+                child: Text(
+                  '฿ ${currencyFormatter.format(widget.item.amount)}',
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w900,
+                    color: AppColors.gold,
+                    letterSpacing: 0.3,
+                  ),
+                ),
+              ),
+            ),
+
+            // 3. Floating Bank Chip (Top Left)
+            Positioned(
+              top: 12,
+              left: 12,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.75),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: widget.item.bankColor.withValues(alpha: 0.6),
+                    width: 1,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.4),
+                      blurRadius: 6,
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 7,
+                      height: 7,
+                      decoration: BoxDecoration(
+                        color: widget.item.bankColor,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      widget.item.bankName,
+                      style: TextStyle(
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.bold,
+                        color: widget.item.bankColor,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            // 4. Real note chip if present
+            if (widget.item.note != null && widget.item.note!.isNotEmpty)
+              Positioned(
+                bottom: 12,
+                left: 12,
+                right: 12,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.78),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.15),
+                      width: 0.8,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.edit_note_rounded,
+                        size: 14,
+                        color: Color(0xFFD4AF37),
+                      ),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          widget.item.note!,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: Colors.white70,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+            // 5. Active Vault Overlay Badge (When Dragging near Vault)
+            if (activeCat != null)
+              Positioned.fill(
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: activeCat.color.withValues(alpha: 0.25),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: activeCat.color, width: 2.5),
+                  ),
+                  child: Center(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 14,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.surface,
+                        borderRadius: BorderRadius.circular(30),
+                        border: Border.all(color: AppColors.gold, width: 1.5),
+                        boxShadow: [
+                          BoxShadow(
+                            color: activeCat.color.withValues(alpha: 0.7),
+                            blurRadius: 22,
+                            offset: const Offset(0, 6),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(activeCat.icon, color: AppColors.gold, size: 22),
+                          const SizedBox(width: 10),
+                          Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'VAULT ${activeCat.romanNumeral} • ${activeCat.latinTitle}',
+                                style: const TextStyle(
+                                  color: AppColors.gold,
+                                  fontSize: 12.5,
+                                  fontWeight: FontWeight.w900,
+                                  letterSpacing: 1.0,
+                                ),
+                              ),
+                              Text(
+                                activeCat.thaiTitle,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSlipImage(String path) {
+    final isAsset = path.startsWith('assets/');
+    if (isAsset) {
+      return Image.asset(
+        path,
+        fit: BoxFit.contain,
+        filterQuality: FilterQuality.medium,
+        errorBuilder: (ctx, err, stack) => _buildImageError(),
+      );
+    }
+    return Image.file(
+      File(path),
+      fit: BoxFit.contain,
+      filterQuality: FilterQuality.medium,
+      errorBuilder: (ctx, err, stack) => _buildImageError(),
+    );
+  }
+
+  Widget _buildImageError() {
+    return const Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.broken_image_rounded, size: 40, color: Colors.white38),
+          SizedBox(height: 8),
+          Text(
+            'ไม่สามารถแสดงรูปสลิปได้',
+            style: TextStyle(color: Colors.white54, fontSize: 11),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSyntheticFallbackCard(
+    NumberFormat currencyFormatter,
+    DateFormat dateFormatter,
+    ExpenseCategory? activeCat,
+  ) {
     return Container(
       width: 322,
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
@@ -398,7 +677,46 @@ class _SwipeableSlipCardState extends State<SwipeableSlipCard>
                 isSmall: true,
               ),
 
-              const SizedBox(height: 14),
+              if (widget.item.imagePath != null) ...[
+                const SizedBox(height: 9),
+                Center(
+                  child: GestureDetector(
+                    onTap: () => _viewOriginalSlip(context, widget.item.imagePath!),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: widget.item.bankColor.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: widget.item.bankColor.withValues(alpha: 0.35),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.image_search_rounded,
+                            size: 13,
+                            color: widget.item.bankColor,
+                          ),
+                          const SizedBox(width: 5),
+                          Text(
+                            'ดูรูปสลิปต้นฉบับ',
+                            style: TextStyle(
+                              fontSize: 10.5,
+                              fontWeight: FontWeight.bold,
+                              color: widget.item.bankColor,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+
+              const SizedBox(height: 12),
 
               // Interaction Hint
               Container(
@@ -545,6 +863,43 @@ class _SwipeableSlipCardState extends State<SwipeableSlipCard>
           ),
         ),
       ],
+    );
+  }
+
+  void _viewOriginalSlip(BuildContext context, String path) {
+    HapticFeedback.lightImpact();
+    final bool isFileOnDisk = File(path).existsSync();
+
+    showDialog(
+      context: context,
+      builder: (ctx) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                IconButton.filled(
+                  onPressed: () => Navigator.of(ctx).pop(),
+                  icon: const Icon(Icons.close_rounded, color: Colors.white, size: 20),
+                  style: IconButton.styleFrom(backgroundColor: Colors.black87),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Flexible(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(18),
+                child: isFileOnDisk
+                    ? Image.file(File(path), fit: BoxFit.contain)
+                    : Image.asset(path, fit: BoxFit.contain),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

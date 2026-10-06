@@ -10,6 +10,7 @@ class ExpenseCardItem {
   final Color bankColor;
   final String referenceNo;
   final String? note;
+  final String? imagePath;
   ExpenseCategory? assignedCategory;
 
   ExpenseCardItem({
@@ -21,11 +22,13 @@ class ExpenseCardItem {
     required this.bankColor,
     required this.referenceNo,
     this.note,
+    this.imagePath,
     this.assignedCategory,
   });
 
   ExpenseCardItem copyWith({
     ExpenseCategory? assignedCategory,
+    String? imagePath,
   }) {
     return ExpenseCardItem(
       id: id,
@@ -36,6 +39,7 @@ class ExpenseCardItem {
       bankColor: bankColor,
       referenceNo: referenceNo,
       note: note,
+      imagePath: imagePath ?? this.imagePath,
       assignedCategory: assignedCategory ?? this.assignedCategory,
     );
   }

@@ -38,6 +38,268 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
 
   final _slipParser = SlipParserService();
   bool _isScanningSlips = false;
+  StateSetter? _progressDialogStateSetter;
+
+  void _openScanOptionsSheet() {
+    HapticFeedback.lightImpact();
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppColors.gold.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      Icons.document_scanner_rounded,
+                      color: AppColors.gold,
+                      size: 22,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  const Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'นำเข้าสลิปธนาคาร',
+                        style: TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.marbleWhite,
+                        ),
+                      ),
+                      Text(
+                        'วิเคราะห์สลิปและคัดกรองอัตโนมัติ On-Device',
+                        style: TextStyle(fontSize: 11.5, color: AppColors.textSecondary),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+
+              // Option 1: Auto-scan device gallery
+              ListTile(
+                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  side: const BorderSide(color: AppColors.gold, width: 1.2),
+                ),
+                tileColor: AppColors.gold.withValues(alpha: 0.08),
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppColors.gold,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(
+                    Icons.auto_awesome_rounded,
+                    color: Colors.black,
+                    size: 20,
+                  ),
+                ),
+                title: const Text(
+                  'กวาดหาสลิปในเครื่องอัตโนมัติ (Auto-Scan)',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.gold,
+                  ),
+                ),
+                subtitle: const Text(
+                  'ขอสิทธิ์คลังภาพ และค้นหาเฉพาะรูปที่เป็นสลิปเข้าสู่สำรับทันที',
+                  style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                ),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _autoScanDeviceGallery();
+                },
+              ),
+              const SizedBox(height: 12),
+
+              // Option 2: Manual Pick
+              ListTile(
+                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  side: const BorderSide(color: AppColors.surfaceLight),
+                ),
+                tileColor: AppColors.surfaceLight.withValues(alpha: 0.3),
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFA855F7).withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(
+                    Icons.photo_library_rounded,
+                    color: Color(0xFFA855F7),
+                    size: 20,
+                  ),
+                ),
+                title: const Text(
+                  'เลือกรูปสลิปจากอัลบั้มด้วยตนเอง (Manual Pick)',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.marbleWhite,
+                  ),
+                ),
+                subtitle: const Text(
+                  'เปิดหน้าเลือกรูปภาพเพื่อเลือกรูปสลิปที่ต้องการทีละหลายรูป',
+                  style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                ),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _importSlipsFromGallery();
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _autoScanDeviceGallery() async {
+    HapticFeedback.lightImpact();
+    setState(() {
+      _isScanningSlips = true;
+    });
+
+    int current = 0;
+    int total = 0;
+    int found = 0;
+
+    // Show Progress Dialog
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogCtx) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          _progressDialogStateSetter = setDialogState;
+          return Dialog(
+            backgroundColor: AppColors.surface,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+              side: const BorderSide(color: AppColors.gold, width: 1.2),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const SizedBox(
+                    width: 48,
+                    height: 48,
+                    child: CircularProgressIndicator(color: AppColors.gold, strokeWidth: 3),
+                  ),
+                  const SizedBox(height: 20),
+                  const Text(
+                    'กำลังกวาดค้นหาสลิปในเครื่อง...',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.marbleWhite,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    total > 0
+                        ? 'วิเคราะห์รูปภาพ ($current/$total)\nพบสลิปธนาคารแล้ว $found ใบ'
+                        : 'กำลังขอสิทธิ์และเข้าถึงคลังภาพล่าสุด...',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(fontSize: 12.5, color: AppColors.textSecondary, height: 1.4),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+
+    try {
+      final imagePaths = await _slipParser.scanDeviceGalleryImagePaths(limit: 50);
+      total = imagePaths.length;
+      if (mounted && _progressDialogStateSetter != null) {
+        _progressDialogStateSetter!(() {});
+      }
+
+      if (imagePaths.isEmpty) {
+        if (!mounted) return;
+        Navigator.of(context, rootNavigator: true).pop();
+        setState(() {
+          _isScanningSlips = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            backgroundColor: AppColors.surface,
+            content: Text('ไม่พบรูปภาพใหม่หรือยังไม่ได้รับสิทธิ์เข้าถึงคลังภาพ'),
+          ),
+        );
+        return;
+      }
+
+      final parsedItems = await _slipParser.parseSlipImages(
+        imagePaths,
+        onProgress: (c, t, f) {
+          current = c;
+          total = t;
+          found = f;
+          if (_progressDialogStateSetter != null) {
+            _progressDialogStateSetter!(() {});
+          }
+        },
+      );
+
+      if (!mounted) return;
+      Navigator.of(context, rootNavigator: true).pop();
+
+      setState(() {
+        _isScanningSlips = false;
+        if (parsedItems.isNotEmpty) {
+          _pendingCards.insertAll(0, parsedItems);
+        }
+      });
+
+      HapticFeedback.mediumImpact();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: AppColors.surface,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+            side: const BorderSide(color: AppColors.gold),
+          ),
+          content: Text(
+            parsedItems.isNotEmpty
+                ? 'กวาดพบสลิปใหม่ ${parsedItems.length} ใบจากคลังภาพ พร้อมให้ปัดแล้ว!'
+                : 'กวาดตรวจแล้ว ${imagePaths.length} รูป แต่ไม่พบสลิปธนาคารใหม่',
+            style: const TextStyle(color: AppColors.marbleWhite, fontWeight: FontWeight.bold),
+          ),
+        ),
+      );
+    } catch (e) {
+      if (mounted) Navigator.of(context, rootNavigator: true).pop();
+      setState(() {
+        _isScanningSlips = false;
+      });
+    }
+  }
 
   Future<void> _importSlipsFromGallery() async {
     HapticFeedback.lightImpact();
@@ -426,8 +688,8 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
                   ),
                   const SizedBox(width: 8),
                   IconButton.filled(
-                    tooltip: 'สแกนสลิปจากอัลบั้มภาพ',
-                    onPressed: _isScanningSlips ? null : _importSlipsFromGallery,
+                    tooltip: 'นำเข้าสลิปธนาคาร (Import Slips)',
+                    onPressed: _isScanningSlips ? null : _openScanOptionsSheet,
                     icon: _isScanningSlips
                         ? const SizedBox(
                             width: 18,
@@ -607,7 +869,7 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton.icon(
-              onPressed: _isScanningSlips ? null : _importSlipsFromGallery,
+              onPressed: _isScanningSlips ? null : _openScanOptionsSheet,
               icon: _isScanningSlips
                   ? const SizedBox(
                       width: 18,
@@ -615,7 +877,7 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
                       child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black),
                     )
                   : const Icon(Icons.document_scanner_rounded, size: 20),
-              label: const Text('สแกนสลิปจากอัลบั้ม (Scan Real Slips)'),
+              label: const Text('นำเข้าและสแกนสลิป (Import Slips)'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.gold,
                 foregroundColor: const Color(0xFF0F172A),
