@@ -13,6 +13,22 @@ class ThaiBankInfo {
   const ThaiBankInfo({required this.name, required this.color});
 }
 
+class SlipScanProgress {
+  final int scanned;
+  final int total;
+  final int foundCount;
+  final ExpenseCardItem? newSlip;
+
+  const SlipScanProgress({
+    required this.scanned,
+    required this.total,
+    required this.foundCount,
+    this.newSlip,
+  });
+
+  bool get isFinished => scanned >= total;
+}
+
 class SlipParserService {
   // Official Bank Identification Codes in Thailand (BOT / PromptPay EMVCo)
   static const Map<String, ThaiBankInfo> bankCodeMap = {
@@ -41,8 +57,96 @@ class SlipParserService {
     }
   }
 
+  /// Stream slips discovered in the background across recent gallery images
+  /// Processes in non-blocking batches, yielding each detected slip immediately.
+  Stream<SlipScanProgress> streamGallerySlips({
+    int maxScan = 500,
+    Set<String> knownReferenceNos = const {},
+  }) async* {
+    final PermissionState ps = await PhotoManager.requestPermissionExtend();
+    if (!ps.isAuth && !ps.hasAccess) {
+      return;
+    }
+
+    final List<AssetPathEntity> albums = await PhotoManager.getAssetPathList(
+      type: RequestType.image,
+      onlyAll: true,
+    );
+    if (albums.isEmpty) return;
+
+    final AssetPathEntity recentAlbum = albums.first;
+    final int totalAssets = await recentAlbum.assetCountAsync;
+    final int scanTarget = totalAssets < maxScan ? totalAssets : maxScan;
+
+    final barcodeScanner = BarcodeScanner(formats: [BarcodeFormat.qrCode]);
+    final textRecognizer = TextRecognizer(script: TextRecognitionScript.latin);
+
+    int scannedSoFar = 0;
+    int foundCount = 0;
+    const int batchSize = 25;
+
+    try {
+      for (int page = 0; page * batchSize < scanTarget; page++) {
+        final start = page * batchSize;
+        final end = (start + batchSize > scanTarget) ? scanTarget : start + batchSize;
+
+        final List<AssetEntity> batch = await recentAlbum.getAssetListRange(
+          start: start,
+          end: end,
+        );
+
+        for (final asset in batch) {
+          scannedSoFar++;
+
+          // 1. Ultra-fast portrait pre-filter (0ms)
+          if (asset.width > asset.height * 1.25) {
+            continue;
+          }
+
+          final file = await asset.file;
+          if (file == null || !await file.exists()) continue;
+
+          final item = await parseSingleSlip(
+            file.path,
+            scanner: barcodeScanner,
+            recognizer: textRecognizer,
+          );
+
+          if (item != null) {
+            // De-duplication: Skip if reference number is already known
+            if (knownReferenceNos.contains(item.referenceNo)) {
+              continue;
+            }
+
+            foundCount++;
+            yield SlipScanProgress(
+              scanned: scannedSoFar,
+              total: scanTarget,
+              foundCount: foundCount,
+              newSlip: item,
+            );
+          }
+
+          // Yield execution to keep the Flutter UI at 60/120 FPS
+          await Future.delayed(const Duration(milliseconds: 5));
+        }
+
+        // Emit batch progress milestone
+        yield SlipScanProgress(
+          scanned: scannedSoFar,
+          total: scanTarget,
+          foundCount: foundCount,
+          newSlip: null,
+        );
+      }
+    } finally {
+      barcodeScanner.close();
+      textRecognizer.close();
+    }
+  }
+
   /// Automatically scans recent gallery images on device without user manual picking
-  Future<List<String>> scanDeviceGalleryImagePaths({int limit = 50}) async {
+  Future<List<String>> scanDeviceGalleryImagePaths({int limit = 100}) async {
     try {
       final PermissionState ps = await PhotoManager.requestPermissionExtend();
       if (!ps.isAuth && !ps.hasAccess) {

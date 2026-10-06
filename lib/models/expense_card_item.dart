@@ -44,6 +44,50 @@ class ExpenseCardItem {
     );
   }
 
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'receiverName': receiverName,
+    'amount': amount,
+    'dateTime': dateTime.toIso8601String(),
+    'bankName': bankName,
+    'bankColor': bankColor.toARGB32(),
+    'referenceNo': referenceNo,
+    'note': note,
+    'imagePath': imagePath,
+    'assignedCategoryId': assignedCategory?.id,
+  };
+
+  factory ExpenseCardItem.fromJson(Map<String, dynamic> json) {
+    ExpenseCategory? category;
+    if (json['assignedCategoryId'] != null) {
+      final id = json['assignedCategoryId'] as String;
+      for (final c in ExpenseCategory.defaultCorners) {
+        if (c.id == id) {
+          category = c;
+          break;
+        }
+      }
+    }
+
+    final colorVal = json['bankColor'];
+    final Color color = colorVal is int ? Color(colorVal) : const Color(0xFF003D79);
+
+    return ExpenseCardItem(
+      id: json['id'] as String? ?? 'id-${DateTime.now().millisecondsSinceEpoch}',
+      receiverName: json['receiverName'] as String? ?? '',
+      amount: (json['amount'] as num?)?.toDouble() ?? 0.0,
+      dateTime: json['dateTime'] != null
+          ? DateTime.tryParse(json['dateTime'] as String) ?? DateTime.now()
+          : DateTime.now(),
+      bankName: json['bankName'] as String? ?? 'ธนาคาร',
+      bankColor: color,
+      referenceNo: json['referenceNo'] as String? ?? '',
+      note: json['note'] as String?,
+      imagePath: json['imagePath'] as String?,
+      assignedCategory: category,
+    );
+  }
+
   static List<ExpenseCardItem> get sampleCards => [
     ExpenseCardItem(
       id: 'slip-001',

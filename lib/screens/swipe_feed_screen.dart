@@ -8,10 +8,27 @@ import '../widgets/corner_target_box.dart';
 import '../widgets/quick_add_sheet.dart';
 import '../widgets/swipeable_slip_card.dart';
 import '../widgets/vault_details_sheet.dart';
+import '../widgets/arcade_button.dart';
+import '../widgets/arcade_badge.dart';
 import '../services/slip_parser_service.dart';
 
 class SwipeFeedScreen extends StatefulWidget {
-  const SwipeFeedScreen({super.key});
+  final List<ExpenseCardItem>? pendingCards;
+  final List<ExpenseCardItem>? categorizedCards;
+  final Function(ExpenseCardItem item, CornerPosition corner)? onCategorized;
+  final VoidCallback? onUndo;
+  final Function(ExpenseCardItem item)? onQuickAdded;
+  final Function(List<ExpenseCardItem> items)? onSlipsImported;
+
+  const SwipeFeedScreen({
+    super.key,
+    this.pendingCards,
+    this.categorizedCards,
+    this.onCategorized,
+    this.onUndo,
+    this.onQuickAdded,
+    this.onSlipsImported,
+  });
 
   @override
   State<SwipeFeedScreen> createState() => _SwipeFeedScreenState();
@@ -273,6 +290,7 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
         _isScanningSlips = false;
         if (parsedItems.isNotEmpty) {
           _pendingCards.insertAll(0, parsedItems);
+          widget.onSlipsImported?.call(parsedItems);
         }
       });
 
@@ -340,6 +358,7 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
       _isScanningSlips = false;
       if (parsedItems.isNotEmpty) {
         _pendingCards.insertAll(0, parsedItems);
+        widget.onSlipsImported?.call(parsedItems);
       }
     });
 
@@ -366,7 +385,47 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
   @override
   void initState() {
     super.initState();
-    _resetToSample();
+    if (widget.pendingCards != null) {
+      _pendingCards = List.from(widget.pendingCards!);
+    } else {
+      _pendingCards = List.from(ExpenseCardItem.sampleCards);
+    }
+    if (widget.categorizedCards != null) {
+      _categorizedCards.clear();
+      _categorizedCards.addAll(widget.categorizedCards!);
+    }
+    _recalculateTotals();
+  }
+
+  @override
+  void didUpdateWidget(covariant SwipeFeedScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.pendingCards != null) {
+      setState(() {
+        _pendingCards = List.from(widget.pendingCards!);
+      });
+    }
+    if (widget.categorizedCards != null) {
+      setState(() {
+        _categorizedCards.clear();
+        _categorizedCards.addAll(widget.categorizedCards!);
+        _recalculateTotals();
+      });
+    }
+  }
+
+  void _recalculateTotals() {
+    for (var key in _categoryTotals.keys) {
+      _categoryTotals[key] = 0.0;
+      _categoryCounts[key] = 0;
+    }
+    for (var item in _categorizedCards) {
+      if (item.assignedCategory != null) {
+        final id = item.assignedCategory!.id;
+        _categoryTotals[id] = (_categoryTotals[id] ?? 0.0) + item.amount;
+        _categoryCounts[id] = (_categoryCounts[id] ?? 0) + 1;
+      }
+    }
   }
 
   void _resetToSample() {
@@ -395,6 +454,8 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
       _categoryCounts[cat.id] = (_categoryCounts[cat.id] ?? 0) + 1;
       _hoveredCorner = null;
     });
+
+    widget.onCategorized?.call(item, corner);
   }
 
   void _undoLastAction() {
@@ -414,6 +475,7 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
     });
 
     HapticFeedback.lightImpact();
+    widget.onUndo?.call();
   }
 
   void _openQuickAdd() {
@@ -427,6 +489,7 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
             _pendingCards.insert(0, newItem);
           });
           HapticFeedback.lightImpact();
+          widget.onQuickAdded?.call(newItem);
         },
       ),
     );
@@ -467,10 +530,11 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
     final tributumCat = _getCategory(CornerPosition.bottomRight);
 
     return Scaffold(
+      backgroundColor: AppColors.background,
       body: SafeArea(
         child: Stack(
           children: [
-            // Top Navigation & Roman Emperor Header
+            // Top Navigation & Cartoon Moneta Header
             Positioned(
               top: 6,
               left: 14,
@@ -481,48 +545,46 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
                   Row(
                     children: [
                       Container(
-                        padding: const EdgeInsets.all(8),
+                        padding: const EdgeInsets.all(7),
                         decoration: BoxDecoration(
-                          color: AppColors.surface,
+                          color: AppColors.gold,
                           borderRadius: BorderRadius.circular(14),
                           border: Border.all(
-                            color: AppColors.gold.withValues(alpha: 0.5),
-                            width: 1.2,
+                            color: AppColors.goldShadow,
+                            width: 2.0,
                           ),
-                          boxShadow: [
+                          boxShadow: const [
                             BoxShadow(
-                              color: AppColors.gold.withValues(alpha: 0.15),
-                              blurRadius: 10,
+                              color: AppColors.goldShadow,
+                              offset: Offset(0, 2.5),
+                              blurRadius: 0,
                             ),
                           ],
                         ),
                         child: const Icon(
-                          Icons.account_balance_rounded,
-                          color: AppColors.gold,
-                          size: 20,
+                          Icons.monetization_on_rounded,
+                          color: Color(0xFF1E293B),
+                          size: 22,
                         ),
                       ),
                       const SizedBox(width: 10),
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: const [
-                              Text(
-                                'MONETA',
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w900,
-                                  letterSpacing: 1.5,
-                                  color: AppColors.gold,
-                                ),
-                              ),
-                            ],
+                        children: const [
+                          Text(
+                            'MONETA',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 1.0,
+                              color: AppColors.textPrimary,
+                            ),
                           ),
-                          const Text(
+                          Text(
                             'ปัดสลิป จัดการค่าใช้จ่าย',
                             style: TextStyle(
                               fontSize: 11,
+                              fontWeight: FontWeight.w600,
                               color: AppColors.textSecondary,
                             ),
                           ),
@@ -532,69 +594,30 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
                   ),
                   Row(
                     children: [
-                      // Streak Badge
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        margin: const EdgeInsets.only(right: 6),
-                        decoration: BoxDecoration(
-                          color: AppColors.vaultTributum.withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: AppColors.vaultTributum.withValues(alpha: 0.4),
-                          ),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: const [
-                            Text('🔥', style: TextStyle(fontSize: 12)),
-                            SizedBox(width: 4),
-                            Text(
-                              '7 วัน',
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF6EE7B7),
-                              ),
-                            ),
-                          ],
-                        ),
+                      // Streak Badge - Cartoon 3D Flame Pill
+                      ArcadeBadge(
+                        label: '7 วัน',
+                        leading: const Text('🔥', style: TextStyle(fontSize: 12)),
+                        color: const Color(0xFFFFF7ED),
+                        borderColor: const Color(0xFFF97316),
+                        shadowColor: const Color(0xFFEA580C),
+                        textColor: const Color(0xFFEA580C),
+                        depth: 2.0,
+                        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
                       ),
+                      const SizedBox(width: 6),
 
-                      // Pending Cards Pill
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 9,
-                          vertical: 4.5,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.surface,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: AppColors.gold.withValues(alpha: 0.4),
-                          ),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(
-                              Icons.style_rounded,
-                              size: 13,
-                              color: AppColors.gold,
-                            ),
-                            const SizedBox(width: 5),
-                            Text(
-                              '${_pendingCards.length} สลิป',
-                              style: const TextStyle(
-                                fontSize: 11.5,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.marbleWhite,
-                              ),
-                            ),
-                          ],
-                        ),
+                      // Pending Cards Pill - Cartoon 3D Counter
+                      ArcadeBadge(
+                        label: '${_pendingCards.length} สลิป',
+                        icon: Icons.style_rounded,
+                        color: AppColors.surface,
+                        borderColor: AppColors.borderDark,
+                        shadowColor: AppColors.shadowDefault,
+                        iconColor: AppColors.vaultQuadrigaShadow,
+                        textColor: AppColors.textPrimary,
+                        depth: 2.0,
+                        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
                       ),
                     ],
                   ),
@@ -604,7 +627,7 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
 
             // Top-Left Vault (1. Food)
             Positioned(
-              top: 66,
+              top: 60,
               left: 14,
               child: CornerTargetBox(
                 category: tavernaCat,
@@ -617,7 +640,7 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
 
             // Top-Right Vault (2. Transport)
             Positioned(
-              top: 66,
+              top: 60,
               right: 14,
               child: CornerTargetBox(
                 category: quadrigaCat,
@@ -628,9 +651,9 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
               ),
             ),
 
-            // Bottom-Left Vault (3. Shopping)
+            // Bottom-Left Vault (3. Shopping) - Positioned at 136 to clear action bar & dock
             Positioned(
-              bottom: 84,
+              bottom: 136,
               left: 14,
               child: CornerTargetBox(
                 category: forumCat,
@@ -641,9 +664,9 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
               ),
             ),
 
-            // Bottom-Right Vault (4. Bills)
+            // Bottom-Right Vault (4. Bills) - Positioned at 136 to clear action bar & dock
             Positioned(
-              bottom: 84,
+              bottom: 136,
               right: 14,
               child: CornerTargetBox(
                 category: tributumCat,
@@ -654,80 +677,136 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
               ),
             ),
 
-            // Center Card Stack or Roman Triumph Empty State
+            // Center Card Stack or Cartoon Triumph Empty State
             Center(
               child: _pendingCards.isEmpty
                   ? _buildRomanTriumphState()
                   : _buildCardStack(),
             ),
 
-            // Bottom Floating Controls
+            // Arcade Action Controls Bar - Floating cleanly above the bottom dock at 76!
             Positioned(
-              bottom: 16,
-              left: 18,
-              right: 18,
+              bottom: 76,
+              left: 16,
+              right: 16,
               child: Row(
                 children: [
+                  // 1. Undo 3D Button (Only active when cards categorized)
+                  Opacity(
+                    opacity: _categorizedCards.isEmpty ? 0.45 : 1.0,
+                    child: ArcadeButton(
+                      onPressed: _categorizedCards.isEmpty ? null : _undoLastAction,
+                      color: AppColors.surface,
+                      shadowColor: AppColors.shadowDefault,
+                      borderColor: AppColors.borderDark,
+                      borderWidth: 2.0,
+                      depth: 3.5,
+                      borderRadius: BorderRadius.circular(14),
+                      padding: EdgeInsets.zero,
+                      width: 46,
+                      height: 46,
+                      child: const Icon(
+                        Icons.undo_rounded,
+                        size: 22,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+
+                  // 2. Quick Add 3D Button - Big Chunky Arcade Gold
                   Expanded(
-                    child: ElevatedButton.icon(
+                    child: ArcadeButton(
                       onPressed: _openQuickAdd,
-                      icon: const Icon(Icons.flash_on_rounded, size: 18, color: AppColors.gold),
-                      label: const Text(
-                        'บันทึกด่วน',
-                        style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.gold),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.surface,
-                        side: const BorderSide(color: AppColors.gold, width: 1.2),
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  IconButton.filled(
-                    tooltip: 'นำเข้าสลิปธนาคาร (Import Slips)',
-                    onPressed: _isScanningSlips ? null : _openScanOptionsSheet,
-                    icon: _isScanningSlips
-                        ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: AppColors.gold,
+                      color: AppColors.gold,
+                      shadowColor: AppColors.goldShadow,
+                      borderColor: AppColors.goldShadow,
+                      borderWidth: 2.0,
+                      depth: 3.5,
+                      borderRadius: BorderRadius.circular(16),
+                      height: 46,
+                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: const [
+                          Icon(
+                            Icons.bolt_rounded,
+                            size: 20,
+                            color: Color(0xFF1E293B),
+                          ),
+                          SizedBox(width: 4),
+                          Text(
+                            'บันทึกด่วน',
+                            style: TextStyle(
+                              fontSize: 13.5,
+                              fontWeight: FontWeight.w900,
+                              color: Color(0xFF1E293B),
                             ),
-                          )
-                        : const Icon(Icons.document_scanner_rounded),
-                    style: IconButton.styleFrom(
-                      backgroundColor: AppColors.surface,
-                      foregroundColor: AppColors.gold,
-                      side: const BorderSide(color: AppColors.gold, width: 1.2),
-                      padding: const EdgeInsets.all(14),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                   const SizedBox(width: 8),
-                  if (_categorizedCards.isNotEmpty)
-                    IconButton.filled(
-                      tooltip: 'เลิกทำรายการล่าสุด (Undo)',
-                      onPressed: _undoLastAction,
-                      icon: const Icon(Icons.undo_rounded),
-                      style: IconButton.styleFrom(
-                        backgroundColor: AppColors.surface,
-                        foregroundColor: AppColors.gold,
-                        side: BorderSide(color: AppColors.gold.withValues(alpha: 0.4)),
-                        padding: const EdgeInsets.all(14),
-                      ),
+
+                  // 3. Scan Slips 3D Button - Duolingo Sky Blue
+                  ArcadeButton(
+                    onPressed: _isScanningSlips ? null : _openScanOptionsSheet,
+                    color: AppColors.vaultQuadriga,
+                    shadowColor: AppColors.vaultQuadrigaShadow,
+                    borderColor: AppColors.vaultQuadrigaShadow,
+                    borderWidth: 2.0,
+                    depth: 3.5,
+                    borderRadius: BorderRadius.circular(16),
+                    height: 46,
+                    padding: const EdgeInsets.symmetric(horizontal: 14),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _isScanningSlips
+                            ? const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2.2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : const Icon(
+                                Icons.document_scanner_rounded,
+                                size: 19,
+                                color: Colors.white,
+                              ),
+                        const SizedBox(width: 6),
+                        const Text(
+                          'สแกน',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w900,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
                     ),
-                  IconButton.filled(
-                    tooltip: 'รีเซ็ตข้อมูลตัวอย่าง',
+                  ),
+                  const SizedBox(width: 8),
+
+                  // 4. Reset Deck 3D Button - Slate Pill
+                  ArcadeButton(
                     onPressed: _resetToSample,
-                    icon: const Icon(Icons.refresh_rounded),
-                    style: IconButton.styleFrom(
-                      backgroundColor: AppColors.surfaceLight,
-                      foregroundColor: AppColors.textSecondary,
-                      padding: const EdgeInsets.all(14),
+                    color: AppColors.surface,
+                    shadowColor: AppColors.shadowDefault,
+                    borderColor: AppColors.borderDark,
+                    borderWidth: 1.8,
+                    depth: 3.0,
+                    borderRadius: BorderRadius.circular(14),
+                    padding: EdgeInsets.zero,
+                    width: 46,
+                    height: 46,
+                    child: const Icon(
+                      Icons.refresh_rounded,
+                      size: 20,
+                      color: AppColors.textSecondary,
                     ),
                   ),
                 ],
@@ -788,45 +867,51 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
     final currencyFormatter = NumberFormat('#,##0.00', 'th_TH');
 
     return Container(
-      width: 324,
-      padding: const EdgeInsets.all(24),
+      width: 318,
+      padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: AppColors.gold, width: 1.5),
-        boxShadow: [
+        border: Border.all(color: AppColors.borderDark, width: 2.2),
+        boxShadow: const [
           BoxShadow(
-            color: AppColors.gold.withValues(alpha: 0.2),
-            blurRadius: 24,
-            offset: const Offset(0, 10),
+            color: AppColors.shadowDefault,
+            offset: Offset(0, 6),
+            blurRadius: 0,
           ),
         ],
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Roman Laurel & Victory Medallion
+          // Cartoon Victory Trophy
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: AppColors.gold.withValues(alpha: 0.15),
+              color: AppColors.gold,
               shape: BoxShape.circle,
-              border: Border.all(color: AppColors.gold, width: 2),
+              border: Border.all(color: AppColors.goldShadow, width: 2.5),
+              boxShadow: const [
+                BoxShadow(
+                  color: AppColors.goldShadow,
+                  offset: Offset(0, 3),
+                  blurRadius: 0,
+                ),
+              ],
             ),
             child: const Icon(
-              Icons.workspace_premium_rounded,
-              color: AppColors.gold,
-              size: 46,
+              Icons.emoji_events_rounded,
+              color: Color(0xFF1E293B),
+              size: 44,
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
           const Text(
             'จัดหมวดหมู่ครบแล้ว! 🎉',
             style: TextStyle(
               fontSize: 19,
               fontWeight: FontWeight.w900,
-              letterSpacing: 0.5,
-              color: AppColors.gold,
+              color: AppColors.textPrimary,
             ),
           ),
           const SizedBox(height: 6),
@@ -834,73 +919,102 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
             'คุณได้จัดหมวดหมู่สลิป ${_categorizedCards.length} รายการเรียบร้อยแล้ว',
             textAlign: TextAlign.center,
             style: const TextStyle(
-              fontSize: 12.5,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
               color: AppColors.textSecondary,
               height: 1.4,
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
-              color: AppColors.background,
+              color: AppColors.surfaceLight,
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: AppColors.surfaceLight),
+              border: Border.all(color: AppColors.border, width: 1.5),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text(
                   'ยอดรวมทั้งหมด',
-                  style: TextStyle(fontSize: 12, color: AppColors.textMuted),
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textSecondary,
+                  ),
                 ),
                 Text(
                   '฿ ${currencyFormatter.format(grandTotal)}',
                   style: const TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.goldBright,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w900,
+                    color: AppColors.vaultTributumShadow,
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 20),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: _isScanningSlips ? null : _openScanOptionsSheet,
-              icon: _isScanningSlips
-                  ? const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black),
-                    )
-                  : const Icon(Icons.document_scanner_rounded, size: 20),
-              label: const Text('นำเข้าและสแกนสลิป (Import Slips)'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.gold,
-                foregroundColor: const Color(0xFF0F172A),
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
+          const SizedBox(height: 16),
+
+          // Big Chunky Duolingo Green Button
+          ArcadeButton(
+            onPressed: _isScanningSlips ? null : _openScanOptionsSheet,
+            color: AppColors.vaultTributum,
+            shadowColor: AppColors.vaultTributumShadow,
+            borderColor: AppColors.vaultTributumShadow,
+            borderWidth: 2.0,
+            depth: 4.0,
+            borderRadius: BorderRadius.circular(16),
+            padding: const EdgeInsets.symmetric(vertical: 13),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _isScanningSlips
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2.2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Icon(
+                        Icons.document_scanner_rounded,
+                        size: 20,
+                        color: Colors.white,
+                      ),
+                const SizedBox(width: 8),
+                const Text(
+                  'นำเข้าและสแกนสลิปใหม่',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w900,
+                    color: Colors.white,
+                  ),
                 ),
-              ),
+              ],
             ),
           ),
           const SizedBox(height: 10),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              onPressed: _resetToSample,
-              icon: const Icon(Icons.replay_rounded, size: 18),
-              label: const Text('โหลดตัวอย่างสลิปมาลอง (Sample Deck)'),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.gold,
-                side: const BorderSide(color: AppColors.surfaceLight),
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
+
+          // Secondary Arcade Deck Button
+          ArcadeButton(
+            onPressed: _resetToSample,
+            color: AppColors.surface,
+            shadowColor: AppColors.shadowDefault,
+            borderColor: AppColors.borderDark,
+            borderWidth: 1.8,
+            depth: 3.0,
+            borderRadius: BorderRadius.circular(16),
+            padding: const EdgeInsets.symmetric(vertical: 11),
+            child: const Center(
+              child: Text(
+                'โหลดตัวอย่างสลิปมาลอง (Sample Deck)',
+                style: TextStyle(
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.textPrimary,
                 ),
               ),
             ),

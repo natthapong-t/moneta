@@ -203,65 +203,55 @@ class _SwipeableSlipCardState extends State<SwipeableSlipCard>
     NumberFormat currencyFormatter,
   ) {
     return Container(
-      width: 322,
-      height: 490,
+      width: 310,
+      height: 430,
       decoration: BoxDecoration(
-        color: const Color(0xFF131720),
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(22),
         border: activeCat != null
-            ? Border.all(color: activeCat.color, width: 3.0)
-            : Border.all(color: const Color(0xFF2E3846), width: 1.5),
+            ? Border.all(color: activeCat.shadowColor, width: 3.0)
+            : Border.all(color: AppColors.borderDark, width: 2.2),
         boxShadow: [
-          if (activeCat != null) ...[
-            BoxShadow(
-              color: activeCat.color.withValues(alpha: 0.55),
-              blurRadius: 28,
-              offset: const Offset(0, 8),
-            ),
-            BoxShadow(
-              color: AppColors.gold.withValues(alpha: 0.25),
-              blurRadius: 14,
-            ),
-          ] else ...[
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.5),
-              blurRadius: 22,
-              offset: const Offset(0, 12),
-            ),
-          ],
+          BoxShadow(
+            color: activeCat != null ? activeCat.shadowColor : AppColors.shadowDefault,
+            offset: const Offset(0, 6),
+            blurRadius: 0, // Flat 3D cartoon perspective
+            spreadRadius: 0,
+          ),
         ],
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(19),
         child: Stack(
           children: [
             // 1. The Actual Slip Image (Rendered directly)
             Positioned.fill(
               child: Container(
-                color: const Color(0xFF0F1218),
+                color: const Color(0xFFF1F5F9),
                 child: Center(
                   child: _buildSlipImage(widget.item.imagePath!),
                 ),
               ),
             ),
 
-            // 2. Floating Amount Pill (Top Right)
+            // 2. Floating Amount Pill (Top Right) - Arcade 3D Gold Badge
             Positioned(
               top: 12,
               right: 12,
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
                 decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.8),
-                  borderRadius: BorderRadius.circular(14),
+                  color: AppColors.gold,
+                  borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: AppColors.gold.withValues(alpha: 0.7),
-                    width: 1.2,
+                    color: AppColors.goldShadow,
+                    width: 2.0,
                   ),
-                  boxShadow: [
+                  boxShadow: const [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.4),
-                      blurRadius: 8,
+                      color: AppColors.goldShadow,
+                      offset: Offset(0, 2.5),
+                      blurRadius: 0,
                     ),
                   ],
                 ),
@@ -270,30 +260,31 @@ class _SwipeableSlipCardState extends State<SwipeableSlipCard>
                   style: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w900,
-                    color: AppColors.gold,
+                    color: Color(0xFF1E293B),
                     letterSpacing: 0.3,
                   ),
                 ),
               ),
             ),
 
-            // 3. Floating Bank Chip (Top Left)
+            // 3. Floating Bank Chip (Top Left) - Flat Cartoon Pill
             Positioned(
               top: 12,
               left: 12,
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                 decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.75),
-                  borderRadius: BorderRadius.circular(12),
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(14),
                   border: Border.all(
-                    color: widget.item.bankColor.withValues(alpha: 0.6),
-                    width: 1,
+                    color: widget.item.bankColor,
+                    width: 1.8,
                   ),
-                  boxShadow: [
+                  boxShadow: const [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.4),
-                      blurRadius: 6,
+                      color: AppColors.shadowDefault,
+                      offset: Offset(0, 2),
+                      blurRadius: 0,
                     ),
                   ],
                 ),
@@ -301,8 +292,8 @@ class _SwipeableSlipCardState extends State<SwipeableSlipCard>
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Container(
-                      width: 7,
-                      height: 7,
+                      width: 8,
+                      height: 8,
                       decoration: BoxDecoration(
                         color: widget.item.bankColor,
                         shape: BoxShape.circle,
@@ -313,7 +304,7 @@ class _SwipeableSlipCardState extends State<SwipeableSlipCard>
                       widget.item.bankName,
                       style: TextStyle(
                         fontSize: 10.5,
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w900,
                         color: widget.item.bankColor,
                       ),
                     ),
@@ -331,19 +322,26 @@ class _SwipeableSlipCardState extends State<SwipeableSlipCard>
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.78),
-                    borderRadius: BorderRadius.circular(10),
+                    color: AppColors.surface,
+                    borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.15),
-                      width: 0.8,
+                      color: AppColors.borderDark,
+                      width: 1.5,
                     ),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: AppColors.shadowDefault,
+                        offset: Offset(0, 2),
+                        blurRadius: 0,
+                      ),
+                    ],
                   ),
                   child: Row(
                     children: [
                       const Icon(
                         Icons.edit_note_rounded,
-                        size: 14,
-                        color: Color(0xFFD4AF37),
+                        size: 15,
+                        color: AppColors.goldShadow,
                       ),
                       const SizedBox(width: 6),
                       Expanded(
@@ -353,8 +351,8 @@ class _SwipeableSlipCardState extends State<SwipeableSlipCard>
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
                             fontSize: 11,
-                            color: Colors.white70,
-                            fontWeight: FontWeight.w500,
+                            color: AppColors.textPrimary,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                       ),
@@ -368,52 +366,59 @@ class _SwipeableSlipCardState extends State<SwipeableSlipCard>
               Positioned.fill(
                 child: Container(
                   decoration: BoxDecoration(
-                    color: activeCat.color.withValues(alpha: 0.25),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: activeCat.color, width: 2.5),
+                    color: activeCat.bgColor.withValues(alpha: 0.88),
+                    borderRadius: BorderRadius.circular(19),
+                    border: Border.all(color: activeCat.shadowColor, width: 3.0),
                   ),
                   child: Center(
                     child: Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 14,
+                        horizontal: 18,
+                        vertical: 12,
                       ),
                       decoration: BoxDecoration(
                         color: AppColors.surface,
-                        borderRadius: BorderRadius.circular(30),
-                        border: Border.all(color: AppColors.gold, width: 1.5),
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(color: activeCat.shadowColor, width: 2.2),
                         boxShadow: [
                           BoxShadow(
-                            color: activeCat.color.withValues(alpha: 0.7),
-                            blurRadius: 22,
-                            offset: const Offset(0, 6),
+                            color: activeCat.shadowColor,
+                            offset: const Offset(0, 4),
+                            blurRadius: 0,
                           ),
                         ],
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(activeCat.icon, color: AppColors.gold, size: 22),
+                          Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color: activeCat.color,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(activeCat.icon, color: Colors.white, size: 20),
+                          ),
                           const SizedBox(width: 10),
                           Column(
                             mainAxisSize: MainAxisSize.min,
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'VAULT ${activeCat.romanNumeral} • ${activeCat.latinTitle}',
-                                style: const TextStyle(
-                                  color: AppColors.gold,
+                                'ตู้ ${activeCat.romanNumeral} • ${activeCat.latinTitle}',
+                                style: TextStyle(
+                                  color: activeCat.shadowColor,
                                   fontSize: 12.5,
                                   fontWeight: FontWeight.w900,
-                                  letterSpacing: 1.0,
+                                  letterSpacing: 0.5,
                                 ),
                               ),
                               Text(
                                 activeCat.thaiTitle,
                                 style: const TextStyle(
-                                  color: Colors.white,
+                                  color: AppColors.textPrimary,
                                   fontSize: 11.5,
-                                  fontWeight: FontWeight.w500,
+                                  fontWeight: FontWeight.bold,
                                 ),
                               ),
                             ],
@@ -470,32 +475,21 @@ class _SwipeableSlipCardState extends State<SwipeableSlipCard>
     ExpenseCategory? activeCat,
   ) {
     return Container(
-      width: 322,
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+      width: 310,
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
       decoration: BoxDecoration(
-        // Carrara Marble background with warm parchment hue
-        color: const Color(0xFFFDFBF7),
-        borderRadius: BorderRadius.circular(24),
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(22),
         border: activeCat != null
-            ? Border.all(color: activeCat.color, width: 2.5)
-            : Border.all(color: const Color(0xFFE7E1D3), width: 1.5),
+            ? Border.all(color: activeCat.shadowColor, width: 3.0)
+            : Border.all(color: AppColors.borderDark, width: 2.2),
         boxShadow: [
-          if (activeCat != null) ...[
-            BoxShadow(
-              color: activeCat.color.withValues(alpha: 0.4),
-              blurRadius: 28,
-              offset: const Offset(0, 10),
-            ),
-            BoxShadow(
-              color: AppColors.gold.withValues(alpha: 0.25),
-              blurRadius: 12,
-            ),
-          ] else
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.45),
-              blurRadius: 22,
-              offset: const Offset(0, 12),
-            ),
+          BoxShadow(
+            color: activeCat != null ? activeCat.shadowColor : AppColors.shadowDefault,
+            offset: const Offset(0, 6),
+            blurRadius: 0, // Zero-blur flat 3D shadow
+            spreadRadius: 0,
+          ),
         ],
       ),
       child: Stack(
@@ -504,7 +498,7 @@ class _SwipeableSlipCardState extends State<SwipeableSlipCard>
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Roman Seal Header
+              // Header: Bank Chip & Success Pill
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -516,18 +510,18 @@ class _SwipeableSlipCardState extends State<SwipeableSlipCard>
                       ),
                       decoration: BoxDecoration(
                         color: widget.item.bankColor.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(10),
                         border: Border.all(
-                          color: widget.item.bankColor.withValues(alpha: 0.35),
-                          width: 1,
+                          color: widget.item.bankColor,
+                          width: 1.5,
                         ),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Container(
-                            width: 7,
-                            height: 7,
+                            width: 8,
+                            height: 8,
                             decoration: BoxDecoration(
                               color: widget.item.bankColor,
                               shape: BoxShape.circle,
@@ -540,7 +534,7 @@ class _SwipeableSlipCardState extends State<SwipeableSlipCard>
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
                                 fontSize: 11,
-                                fontWeight: FontWeight.bold,
+                                fontWeight: FontWeight.w900,
                                 color: widget.item.bankColor,
                               ),
                             ),
@@ -551,20 +545,20 @@ class _SwipeableSlipCardState extends State<SwipeableSlipCard>
                   ),
                   const SizedBox(width: 8),
 
-                  // Wax Seal / Approved Medallion
+                  // Approved Medallion (Duolingo Lime Green 3D Pill)
                   Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 8,
                       vertical: 3.5,
                     ),
                     decoration: BoxDecoration(
-                      color: AppColors.waxSealRed,
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
+                      color: AppColors.vaultTributum,
+                      borderRadius: BorderRadius.circular(14),
+                      boxShadow: const [
                         BoxShadow(
-                          color: AppColors.waxSealRed.withValues(alpha: 0.35),
-                          blurRadius: 6,
-                          offset: const Offset(0, 2),
+                          color: AppColors.vaultTributumShadow,
+                          offset: Offset(0, 2),
+                          blurRadius: 0,
                         ),
                       ],
                     ),
@@ -581,8 +575,7 @@ class _SwipeableSlipCardState extends State<SwipeableSlipCard>
                           'สำเร็จ',
                           style: TextStyle(
                             fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 0.5,
+                            fontWeight: FontWeight.w900,
                             color: Colors.white,
                           ),
                         ),
@@ -592,33 +585,27 @@ class _SwipeableSlipCardState extends State<SwipeableSlipCard>
                 ],
               ),
 
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
 
               // Amount Section
               Center(
                 child: Column(
                   children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: const [
-                        Text(
-                          'ยอดชำระ',
-                          style: TextStyle(
-                            fontSize: 11,
-                            letterSpacing: 0.5,
-                            color: Color(0xFF64748B),
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
+                    const Text(
+                      'ยอดชำระ',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: AppColors.textSecondary,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 2),
                     Text(
                       '฿ ${currencyFormatter.format(widget.item.amount)}',
                       style: const TextStyle(
-                        fontSize: 32,
+                        fontSize: 30,
                         fontWeight: FontWeight.w900,
-                        color: Color(0xFF1E293B),
+                        color: AppColors.textPrimary,
                         letterSpacing: -0.5,
                       ),
                     ),
@@ -626,27 +613,12 @@ class _SwipeableSlipCardState extends State<SwipeableSlipCard>
                 ),
               ),
 
-              const SizedBox(height: 14),
-              // Golden Meander line / divider
-              Row(
-                children: [
-                  Expanded(
-                    child: Container(
-                      height: 1,
-                      decoration: const BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            Colors.transparent,
-                            Color(0xFFD4AF37),
-                            Colors.transparent,
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
+              const SizedBox(height: 10),
+              Container(
+                height: 2,
+                color: AppColors.border,
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 10),
 
               // Receiver Info
               _buildMetaRow(
@@ -656,7 +628,7 @@ class _SwipeableSlipCardState extends State<SwipeableSlipCard>
               ),
 
               if (widget.item.note != null && widget.item.note!.isNotEmpty) ...[
-                const SizedBox(height: 7),
+                const SizedBox(height: 6),
                 _buildMetaRow(
                   label: 'บันทึกช่วยจำ',
                   value: widget.item.note!,
@@ -664,13 +636,13 @@ class _SwipeableSlipCardState extends State<SwipeableSlipCard>
                 ),
               ],
 
-              const SizedBox(height: 7),
+              const SizedBox(height: 6),
               _buildMetaRow(
                 label: 'วัน-เวลา',
                 value: dateFormatter.format(widget.item.dateTime),
               ),
 
-              const SizedBox(height: 7),
+              const SizedBox(height: 6),
               _buildMetaRow(
                 label: 'เลขที่อ้างอิง',
                 value: widget.item.referenceNo,
@@ -678,18 +650,26 @@ class _SwipeableSlipCardState extends State<SwipeableSlipCard>
               ),
 
               if (widget.item.imagePath != null) ...[
-                const SizedBox(height: 9),
+                const SizedBox(height: 8),
                 Center(
                   child: GestureDetector(
                     onTap: () => _viewOriginalSlip(context, widget.item.imagePath!),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
-                        color: widget.item.bankColor.withValues(alpha: 0.1),
+                        color: AppColors.surfaceLight,
                         borderRadius: BorderRadius.circular(10),
                         border: Border.all(
-                          color: widget.item.bankColor.withValues(alpha: 0.35),
+                          color: AppColors.borderDark,
+                          width: 1.2,
                         ),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: AppColors.shadowDefault,
+                            offset: Offset(0, 1.5),
+                            blurRadius: 0,
+                          ),
+                        ],
                       ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -705,7 +685,7 @@ class _SwipeableSlipCardState extends State<SwipeableSlipCard>
                             'ดูรูปสลิปต้นฉบับ',
                             style: TextStyle(
                               fontSize: 10.5,
-                              fontWeight: FontWeight.bold,
+                              fontWeight: FontWeight.w900,
                               color: widget.item.bankColor,
                             ),
                           ),
@@ -716,16 +696,16 @@ class _SwipeableSlipCardState extends State<SwipeableSlipCard>
                 ),
               ],
 
-              const SizedBox(height: 12),
+              const SizedBox(height: 10),
 
-              // Interaction Hint
+              // Interaction Hint - Arcade Bubble
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 7, horizontal: 8),
+                padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF1ECE1),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: const Color(0xFFDDD5C3)),
+                  color: AppColors.surfaceLight,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.border, width: 1.2),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -733,7 +713,7 @@ class _SwipeableSlipCardState extends State<SwipeableSlipCard>
                     Icon(
                       Icons.swipe_rounded,
                       size: 14,
-                      color: Color(0xFF786C58),
+                      color: AppColors.textSecondary,
                     ),
                     SizedBox(width: 6),
                     Flexible(
@@ -742,8 +722,8 @@ class _SwipeableSlipCardState extends State<SwipeableSlipCard>
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           fontSize: 10.5,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF786C58),
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textSecondary,
                         ),
                       ),
                     ),
@@ -758,36 +738,39 @@ class _SwipeableSlipCardState extends State<SwipeableSlipCard>
             Positioned.fill(
               child: Container(
                 decoration: BoxDecoration(
-                  color: activeCat.color.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: AppColors.gold, width: 2),
+                  color: activeCat.bgColor.withValues(alpha: 0.90),
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(color: activeCat.shadowColor, width: 3),
                 ),
                 child: Center(
                   child: Container(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 18,
-                      vertical: 12,
+                      horizontal: 16,
+                      vertical: 10,
                     ),
                     decoration: BoxDecoration(
                       color: AppColors.surface,
-                      borderRadius: BorderRadius.circular(30),
-                      border: Border.all(color: AppColors.gold, width: 1.5),
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(color: activeCat.shadowColor, width: 2.2),
                       boxShadow: [
                         BoxShadow(
-                          color: activeCat.color.withValues(alpha: 0.6),
-                          blurRadius: 18,
+                          color: activeCat.shadowColor,
                           offset: const Offset(0, 4),
-                        ),
-                        BoxShadow(
-                          color: AppColors.gold.withValues(alpha: 0.3),
-                          blurRadius: 8,
+                          blurRadius: 0,
                         ),
                       ],
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(activeCat.icon, color: AppColors.gold, size: 20),
+                        Container(
+                          padding: const EdgeInsets.all(5),
+                          decoration: BoxDecoration(
+                            color: activeCat.color,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(activeCat.icon, color: Colors.white, size: 18),
+                        ),
                         const SizedBox(width: 8),
                         Flexible(
                           child: Column(
@@ -795,20 +778,19 @@ class _SwipeableSlipCardState extends State<SwipeableSlipCard>
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'VAULT ${activeCat.romanNumeral} • ${activeCat.latinTitle}',
-                                style: const TextStyle(
-                                  color: AppColors.gold,
+                                'ตู้ ${activeCat.romanNumeral} • ${activeCat.latinTitle}',
+                                style: TextStyle(
+                                  color: activeCat.shadowColor,
                                   fontSize: 12,
                                   fontWeight: FontWeight.w900,
-                                  letterSpacing: 1.0,
                                 ),
                               ),
                               Text(
                                 activeCat.thaiTitle,
                                 style: const TextStyle(
-                                  color: Colors.white,
+                                  color: AppColors.textPrimary,
                                   fontSize: 11,
-                                  fontWeight: FontWeight.w500,
+                                  fontWeight: FontWeight.bold,
                                 ),
                               ),
                             ],

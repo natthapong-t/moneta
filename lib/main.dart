@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'core/theme/app_theme.dart';
-import 'screens/swipe_feed_screen.dart';
+import 'screens/main_navigation_shell.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -22,8 +22,8 @@ class MonetaApp extends StatelessWidget {
     return MaterialApp(
       title: 'Moneta',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.romanDarkTheme,
-      home: const SwipeFeedScreen(),
+      theme: AppTheme.lightTheme,
+      home: const MainNavigationShell(),
     );
   }
 }
