@@ -101,6 +101,21 @@ class ExpenseStorageService {
     }
   }
 
+  /// Reset all expenses back to the initial sample cards and clear processed references
+  Future<void> resetToSample() async {
+    try {
+      final p = await prefs;
+      final rawList = ExpenseCardItem.sampleCards
+          .map((item) => jsonEncode(item.toJson()))
+          .toList();
+      await p.setStringList(_keyPending, rawList);
+      await p.setStringList(_keyCategorized, []);
+      await p.remove(_keyProcessedRefs);
+    } catch (e) {
+      debugPrint('Error resetting to sample: $e');
+    }
+  }
+
   /// Monthly budget limit (Default: ฿15,000)
   Future<double> getMonthlyBudget() async {
     final p = await prefs;

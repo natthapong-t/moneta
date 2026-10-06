@@ -107,10 +107,18 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
   }
 
   void _onSlipsImported(List<ExpenseCardItem> newItems) {
-    setState(() {
-      _pendingCards.insertAll(0, newItems);
-    });
-    _saveAllData();
+    final uniqueItems = newItems.where((newItem) {
+      final inPending = _pendingCards.any((p) => p.isDuplicateOf(newItem));
+      final inCategorized = _categorizedCards.any((c) => c.isDuplicateOf(newItem));
+      return !inPending && !inCategorized;
+    }).toList();
+
+    if (uniqueItems.isNotEmpty) {
+      setState(() {
+        _pendingCards.insertAll(0, uniqueItems);
+      });
+      _saveAllData();
+    }
   }
 
   void _onDeleteTransaction(ExpenseCardItem item) {
@@ -119,6 +127,23 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
     });
     _saveAllData();
     HapticFeedback.lightImpact();
+  }
+
+  void _onResetToSample() {
+    setState(() {
+      _pendingCards = List.from(ExpenseCardItem.sampleCards);
+      _categorizedCards = [];
+    });
+    _saveAllData();
+    ExpenseStorageService.instance.resetToSample();
+  }
+
+  void _onRestoreItem(ExpenseCardItem item) {
+    setState(() {
+      _categorizedCards.removeWhere((c) => c.id == item.id);
+      _pendingCards.insert(0, item.copyWith(assignedCategory: null));
+    });
+    _saveAllData();
   }
 
   void _onUpdateBudget(double newBudget) {
@@ -139,10 +164,23 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
     });
 
     final processedRefs = await ExpenseStorageService.instance.getProcessedReferenceNumbers();
+    final knownRefs = <String>{
+      ...processedRefs,
+      ..._pendingCards.map((p) => p.referenceNo).where((r) => r.isNotEmpty),
+      ..._categorizedCards.map((c) => c.referenceNo).where((r) => r.isNotEmpty),
+    };
+    final knownPaths = <String>{
+      ..._pendingCards.map((p) => p.imagePath ?? '').where((p) => p.isNotEmpty),
+      ..._categorizedCards.map((c) => c.imagePath ?? '').where((p) => p.isNotEmpty),
+    };
 
     _scanSubscription?.cancel();
     _scanSubscription = _slipParser
-        .streamGallerySlips(maxScan: 500, knownReferenceNos: processedRefs)
+        .streamGallerySlips(
+          maxScan: null,
+          knownReferenceNos: knownRefs,
+          knownImagePaths: knownPaths,
+        )
         .listen(
       (progress) {
         if (!mounted) return;
@@ -153,12 +191,8 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
 
           if (progress.newSlip != null) {
             final newSlip = progress.newSlip!;
-            final alreadyInPending = _pendingCards.any(
-              (p) => p.referenceNo == newSlip.referenceNo && p.referenceNo.isNotEmpty,
-            );
-            final alreadyInCategorized = _categorizedCards.any(
-              (c) => c.referenceNo == newSlip.referenceNo && c.referenceNo.isNotEmpty,
-            );
+            final alreadyInPending = _pendingCards.any((p) => p.isDuplicateOf(newSlip));
+            final alreadyInCategorized = _categorizedCards.any((c) => c.isDuplicateOf(newSlip));
 
             if (!alreadyInPending && !alreadyInCategorized) {
               _pendingCards.insert(0, newSlip);
@@ -292,6 +326,9 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
                 onUndo: _onUndo,
                 onQuickAdded: _onQuickAdded,
                 onSlipsImported: _onSlipsImported,
+                onResetToSample: _onResetToSample,
+                onRestoreItem: _onRestoreItem,
+                onStartBackgroundScan: _startBackgroundGalleryScan,
               ),
 
               // Tab 2: Ledger History (บันทึกคลัง)
@@ -351,6 +388,21 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
                             fontWeight: FontWeight.w900,
                             color: AppColors.textPrimary,
                           ),
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      InkWell(
+                        onTap: () {
+                          _scanSubscription?.cancel();
+                          setState(() {
+                            _isBackgroundScanning = false;
+                            _scanningStatus = '';
+                          });
+                        },
+                        borderRadius: BorderRadius.circular(12),
+                        child: const Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          child: Icon(Icons.close_rounded, size: 18, color: AppColors.textSecondary),
                         ),
                       ),
                     ],

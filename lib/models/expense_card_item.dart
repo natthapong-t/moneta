@@ -44,6 +44,20 @@ class ExpenseCardItem {
     );
   }
 
+  /// Checks whether this item is a duplicate of another item
+  bool isDuplicateOf(ExpenseCardItem other) {
+    if (referenceNo.isNotEmpty && other.referenceNo.isNotEmpty && referenceNo == other.referenceNo) {
+      return true;
+    }
+    if (imagePath != null && other.imagePath != null && imagePath!.isNotEmpty && imagePath == other.imagePath) {
+      return true;
+    }
+    if (id == other.id) {
+      return true;
+    }
+    return false;
+  }
+
   Map<String, dynamic> toJson() => {
     'id': id,
     'receiverName': receiverName,

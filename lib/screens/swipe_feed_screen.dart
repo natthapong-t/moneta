@@ -19,6 +19,9 @@ class SwipeFeedScreen extends StatefulWidget {
   final VoidCallback? onUndo;
   final Function(ExpenseCardItem item)? onQuickAdded;
   final Function(List<ExpenseCardItem> items)? onSlipsImported;
+  final VoidCallback? onResetToSample;
+  final Function(ExpenseCardItem item)? onRestoreItem;
+  final VoidCallback? onStartBackgroundScan;
 
   const SwipeFeedScreen({
     super.key,
@@ -28,6 +31,9 @@ class SwipeFeedScreen extends StatefulWidget {
     this.onUndo,
     this.onQuickAdded,
     this.onSlipsImported,
+    this.onResetToSample,
+    this.onRestoreItem,
+    this.onStartBackgroundScan,
   });
 
   @override
@@ -142,7 +148,11 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
                 ),
                 onTap: () {
                   Navigator.pop(ctx);
-                  _autoScanDeviceGallery();
+                  if (widget.onStartBackgroundScan != null) {
+                    widget.onStartBackgroundScan!();
+                  } else {
+                    _autoScanDeviceGallery();
+                  }
                 },
               ),
               const SizedBox(height: 12),
@@ -250,7 +260,7 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
     );
 
     try {
-      final imagePaths = await _slipParser.scanDeviceGalleryImagePaths(limit: 50);
+      final imagePaths = await _slipParser.scanDeviceGalleryImagePaths(limit: null);
       total = imagePaths.length;
       if (mounted && _progressDialogStateSetter != null) {
         _progressDialogStateSetter!(() {});
@@ -263,9 +273,17 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
           _isScanningSlips = false;
         });
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             backgroundColor: AppColors.surface,
-            content: Text('ไม่พบรูปภาพใหม่หรือยังไม่ได้รับสิทธิ์เข้าถึงคลังภาพ'),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+              side: const BorderSide(color: AppColors.borderDark),
+            ),
+            content: const Text(
+              'ไม่พบรูปภาพใหม่หรือยังไม่ได้รับสิทธิ์เข้าถึงคลังภาพ',
+              style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold),
+            ),
           ),
         );
         return;
@@ -286,11 +304,19 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
       if (!mounted) return;
       Navigator.of(context, rootNavigator: true).pop();
 
+      final uniqueItems = parsedItems.where((item) {
+        final inPending = _pendingCards.any((p) => p.isDuplicateOf(item));
+        final inCategorized = _categorizedCards.any((c) => c.isDuplicateOf(item));
+        return !inPending && !inCategorized;
+      }).toList();
+
+      final int duplicatesSkipped = parsedItems.length - uniqueItems.length;
+
       setState(() {
         _isScanningSlips = false;
-        if (parsedItems.isNotEmpty) {
-          _pendingCards.insertAll(0, parsedItems);
-          widget.onSlipsImported?.call(parsedItems);
+        if (uniqueItems.isNotEmpty) {
+          _pendingCards.insertAll(0, uniqueItems);
+          widget.onSlipsImported?.call(uniqueItems);
         }
       });
 
@@ -304,9 +330,13 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
             side: const BorderSide(color: AppColors.gold),
           ),
           content: Text(
-            parsedItems.isNotEmpty
-                ? 'กวาดพบสลิปใหม่ ${parsedItems.length} ใบจากคลังภาพ พร้อมให้ปัดแล้ว!'
-                : 'กวาดตรวจแล้ว ${imagePaths.length} รูป แต่ไม่พบสลิปธนาคารใหม่',
+            uniqueItems.isNotEmpty
+                ? (duplicatesSkipped > 0
+                    ? 'กวาดพบสลิปใหม่ ${uniqueItems.length} ใบ (ข้ามสลิปซ้ำ $duplicatesSkipped ใบ)'
+                    : 'กวาดพบสลิปใหม่ ${uniqueItems.length} ใบจากคลังภาพ พร้อมให้ปัดแล้ว!')
+                : (duplicatesSkipped > 0
+                    ? 'สลิปทั้ง $duplicatesSkipped ใบมีอยู่ในระบบแล้ว (ไม่เพิ่มซ้ำ)'
+                    : 'กวาดตรวจแล้ว ${imagePaths.length} รูป แต่ไม่พบสลิปธนาคารใหม่'),
             style: const TextStyle(color: AppColors.marbleWhite, fontWeight: FontWeight.bold),
           ),
         ),
@@ -331,34 +361,53 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        backgroundColor: AppColors.surfaceLight,
+        backgroundColor: AppColors.surface,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14),
+          side: const BorderSide(color: AppColors.gold, width: 1.5),
+        ),
         content: Row(
           children: [
             const SizedBox(
               width: 16,
               height: 16,
-              child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.gold),
+              child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.goldShadow),
             ),
             const SizedBox(width: 12),
-            Text(
-              'กำลังอ่านข้อมูลจาก ${imagePaths.length} สลิป...',
-              style: const TextStyle(color: Colors.white, fontSize: 13),
+            Expanded(
+              child: Text(
+                'กำลังอ่านข้อมูลจาก ${imagePaths.length} สลิป...',
+                style: const TextStyle(
+                  color: AppColors.textPrimary,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
+                ),
+              ),
             ),
           ],
         ),
         duration: const Duration(seconds: 4),
-        behavior: SnackBarBehavior.floating,
       ),
     );
 
     final parsedItems = await _slipParser.parseSlipImages(imagePaths);
 
     if (!mounted) return;
+
+    final uniqueItems = parsedItems.where((item) {
+      final inPending = _pendingCards.any((p) => p.isDuplicateOf(item));
+      final inCategorized = _categorizedCards.any((c) => c.isDuplicateOf(item));
+      return !inPending && !inCategorized;
+    }).toList();
+
+    final int duplicatesSkipped = parsedItems.length - uniqueItems.length;
+
     setState(() {
       _isScanningSlips = false;
-      if (parsedItems.isNotEmpty) {
-        _pendingCards.insertAll(0, parsedItems);
-        widget.onSlipsImported?.call(parsedItems);
+      if (uniqueItems.isNotEmpty) {
+        _pendingCards.insertAll(0, uniqueItems);
+        widget.onSlipsImported?.call(uniqueItems);
       }
     });
 
@@ -373,9 +422,13 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
           side: const BorderSide(color: AppColors.gold),
         ),
         content: Text(
-          parsedItems.isNotEmpty
-              ? 'สแกนพบสลิป ${parsedItems.length} รายการ พร้อมให้ปัดเข้าหมวดหมู่แล้ว!'
-              : 'ตรวจไม่พบข้อมูลสลิปที่สมบูรณ์ในรูปที่เลือก',
+          uniqueItems.isNotEmpty
+              ? (duplicatesSkipped > 0
+                  ? 'เพิ่มสลิปใหม่ ${uniqueItems.length} รายการ (ข้ามสลิปซ้ำ $duplicatesSkipped รายการ)'
+                  : 'สแกนพบสลิป ${uniqueItems.length} รายการ พร้อมให้ปัดเข้าหมวดหมู่แล้ว!')
+              : (duplicatesSkipped > 0
+                  ? 'สลิปทั้ง $duplicatesSkipped รายการมีอยู่ในระบบแล้ว (ไม่เพิ่มซ้ำ)'
+                  : 'ตรวจไม่พบข้อมูลสลิปที่สมบูรณ์ในรูปที่เลือก'),
           style: const TextStyle(color: AppColors.marbleWhite, fontWeight: FontWeight.bold),
         ),
       ),
@@ -429,6 +482,7 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
   }
 
   void _resetToSample() {
+    HapticFeedback.mediumImpact();
     setState(() {
       _pendingCards = List.from(ExpenseCardItem.sampleCards);
       _categorizedCards.clear();
@@ -438,6 +492,50 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
       }
       _hoveredCorner = null;
     });
+    widget.onResetToSample?.call();
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: AppColors.gold.withValues(alpha: 0.18),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.refresh_rounded,
+                  color: AppColors.goldShadow,
+                  size: 18,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Text(
+                  'รีเซ็ตข้อมูลตัวอย่างและล้างยอดเรียบร้อยแล้ว',
+                  style: TextStyle(
+                    color: AppColors.textPrimary,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: AppColors.surface,
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 2),
+          elevation: 4,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: const BorderSide(color: AppColors.gold, width: 2.0),
+          ),
+        ),
+      );
+    }
   }
 
   void _onCardCategorized(ExpenseCardItem item, CornerPosition corner) {
@@ -514,6 +612,7 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
           _categoryCounts[cat.id] =
               (_categoryCounts[cat.id] ?? 1) - 1;
         });
+        widget.onRestoreItem?.call(item);
       },
     );
   }

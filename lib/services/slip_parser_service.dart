@@ -59,9 +59,11 @@ class SlipParserService {
 
   /// Stream slips discovered in the background across recent gallery images
   /// Processes in non-blocking batches, yielding each detected slip immediately.
+  /// If [maxScan] is null, scans all images in the user's gallery without limit.
   Stream<SlipScanProgress> streamGallerySlips({
-    int maxScan = 500,
+    int? maxScan,
     Set<String> knownReferenceNos = const {},
+    Set<String> knownImagePaths = const {},
   }) async* {
     final PermissionState ps = await PhotoManager.requestPermissionExtend();
     if (!ps.isAuth && !ps.hasAccess) {
@@ -76,7 +78,9 @@ class SlipParserService {
 
     final AssetPathEntity recentAlbum = albums.first;
     final int totalAssets = await recentAlbum.assetCountAsync;
-    final int scanTarget = totalAssets < maxScan ? totalAssets : maxScan;
+    final int scanTarget = (maxScan != null && maxScan > 0 && maxScan < totalAssets)
+        ? maxScan
+        : totalAssets;
 
     final barcodeScanner = BarcodeScanner(formats: [BarcodeFormat.qrCode]);
     final textRecognizer = TextRecognizer(script: TextRecognitionScript.latin);
@@ -106,6 +110,11 @@ class SlipParserService {
           final file = await asset.file;
           if (file == null || !await file.exists()) continue;
 
+          // 2. Ultra-fast 0ms De-duplication by image path
+          if (knownImagePaths.contains(file.path)) {
+            continue;
+          }
+
           final item = await parseSingleSlip(
             file.path,
             scanner: barcodeScanner,
@@ -114,7 +123,7 @@ class SlipParserService {
 
           if (item != null) {
             // De-duplication: Skip if reference number is already known
-            if (knownReferenceNos.contains(item.referenceNo)) {
+            if (item.referenceNo.isNotEmpty && knownReferenceNos.contains(item.referenceNo)) {
               continue;
             }
 
@@ -146,7 +155,8 @@ class SlipParserService {
   }
 
   /// Automatically scans recent gallery images on device without user manual picking
-  Future<List<String>> scanDeviceGalleryImagePaths({int limit = 100}) async {
+  /// If [limit] is null, scans all images available in the album.
+  Future<List<String>> scanDeviceGalleryImagePaths({int? limit}) async {
     try {
       final PermissionState ps = await PhotoManager.requestPermissionExtend();
       if (!ps.isAuth && !ps.hasAccess) {
@@ -161,9 +171,11 @@ class SlipParserService {
       if (albums.isEmpty) return [];
 
       final AssetPathEntity recentAlbum = albums.first;
+      final int totalAssets = await recentAlbum.assetCountAsync;
+      final int end = (limit != null && limit > 0 && limit < totalAssets) ? limit : totalAssets;
       final List<AssetEntity> assets = await recentAlbum.getAssetListRange(
         start: 0,
-        end: limit,
+        end: end,
       );
 
       final List<String> paths = [];
@@ -378,10 +390,10 @@ class SlipParserService {
       }
 
       final finalRef = refFromQR ??
-          'REF-${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}';
+          'REF-${path.hashCode.abs()}-${finalAmount.toStringAsFixed(2)}';
 
       return ExpenseCardItem(
-        id: 'slip-${DateTime.now().millisecondsSinceEpoch}-${path.hashCode.abs() % 10000}',
+        id: 'slip-${(refFromQR ?? path).hashCode.abs()}',
         receiverName: receiver.isNotEmpty
             ? receiver
             : (note ?? 'รายการโอนเงิน ($bankName)'),
