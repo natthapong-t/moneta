@@ -43,7 +43,11 @@ class _LedgerHistoryScreenState extends State<LedgerHistoryScreen> {
         final matchBank = item.bankName.toLowerCase().contains(query);
         final matchAmount = item.amount.toString().contains(query);
         final matchRef = item.referenceNo.toLowerCase().contains(query);
-        return matchReceiver || matchNote || matchBank || matchAmount || matchRef;
+        return matchReceiver ||
+            matchNote ||
+            matchBank ||
+            matchAmount ||
+            matchRef;
       }
       return true;
     }).toList();
@@ -65,7 +69,7 @@ class _LedgerHistoryScreenState extends State<LedgerHistoryScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   const Text(
-                    'บันทึกคลังหลวง (Ledger)',
+                    'ประวัติรายการ (Ledger)',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w900,
@@ -74,11 +78,16 @@ class _LedgerHistoryScreenState extends State<LedgerHistoryScreen> {
                     ),
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: AppColors.surface,
                       borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: AppColors.gold.withValues(alpha: 0.4)),
+                      border: Border.all(
+                        color: AppColors.gold.withValues(alpha: 0.4),
+                      ),
                     ),
                     child: Text(
                       '${filteredList.length} รายการ',
@@ -101,8 +110,15 @@ class _LedgerHistoryScreenState extends State<LedgerHistoryScreen> {
                 style: const TextStyle(color: Colors.white, fontSize: 13.5),
                 decoration: InputDecoration(
                   hintText: 'ค้นหาชื่อร้าน, เลขที่อ้างอิง, หรือยอดเงิน...',
-                  hintStyle: const TextStyle(color: AppColors.textSecondary, fontSize: 12.5),
-                  prefixIcon: const Icon(Icons.search_rounded, color: AppColors.gold, size: 20),
+                  hintStyle: const TextStyle(
+                    color: AppColors.textSecondary,
+                    fontSize: 12.5,
+                  ),
+                  prefixIcon: const Icon(
+                    Icons.search_rounded,
+                    color: AppColors.gold,
+                    size: 20,
+                  ),
                   suffixIcon: _searchQuery.isNotEmpty
                       ? IconButton(
                           icon: const Icon(Icons.clear_rounded, size: 18),
@@ -111,7 +127,10 @@ class _LedgerHistoryScreenState extends State<LedgerHistoryScreen> {
                       : null,
                   filled: true,
                   fillColor: AppColors.surface,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16),
                     borderSide: const BorderSide(color: AppColors.borderDark),
@@ -122,7 +141,10 @@ class _LedgerHistoryScreenState extends State<LedgerHistoryScreen> {
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16),
-                    borderSide: const BorderSide(color: AppColors.gold, width: 1.5),
+                    borderSide: const BorderSide(
+                      color: AppColors.gold,
+                      width: 1.5,
+                    ),
                   ),
                 ),
               ),
@@ -159,7 +181,10 @@ class _LedgerHistoryScreenState extends State<LedgerHistoryScreen> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
                   color: AppColors.surfaceLight.withValues(alpha: 0.4),
                   borderRadius: BorderRadius.circular(12),
@@ -169,7 +194,10 @@ class _LedgerHistoryScreenState extends State<LedgerHistoryScreen> {
                   children: [
                     const Text(
                       'ยอดรวมการกรอง:',
-                      style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
+                      ),
                     ),
                     Text(
                       '฿ ${currencyFormatter.format(totalFilteredAmount)}',
@@ -191,11 +219,18 @@ class _LedgerHistoryScreenState extends State<LedgerHistoryScreen> {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: const [
-                          Icon(Icons.inventory_2_outlined, size: 48, color: AppColors.textMuted),
+                          Icon(
+                            Icons.inventory_2_outlined,
+                            size: 48,
+                            color: AppColors.textMuted,
+                          ),
                           SizedBox(height: 12),
                           Text(
                             'ไม่พบรายการธุรกรรม',
-                            style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
+                            style: TextStyle(
+                              color: AppColors.textSecondary,
+                              fontSize: 13,
+                            ),
                           ),
                         ],
                       ),
@@ -218,23 +253,33 @@ class _LedgerHistoryScreenState extends State<LedgerHistoryScreen> {
                               color: AppColors.waxSealRed,
                               borderRadius: BorderRadius.circular(16),
                             ),
-                            child: const Icon(Icons.delete_outline_rounded, color: Colors.white),
+                            child: const Icon(
+                              Icons.delete_outline_rounded,
+                              color: Colors.white,
+                            ),
                           ),
                           onDismissed: (_) => widget.onDeleteTransaction(item),
                           child: Padding(
                             padding: const EdgeInsets.only(bottom: 8),
                             child: ArcadeCard(
                               onTap: () => _showSlipDetails(context, item),
-                              borderColor: (cat?.color ?? AppColors.borderDark).withValues(alpha: 0.4),
-                              shadowColor: (cat?.shadowColor ?? AppColors.shadowDefault).withValues(alpha: 0.35),
+                              borderColor: (cat?.color ?? AppColors.borderDark)
+                                  .withValues(alpha: 0.4),
+                              shadowColor:
+                                  (cat?.shadowColor ?? AppColors.shadowDefault)
+                                      .withValues(alpha: 0.35),
                               depth: 2.5,
-                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                                vertical: 10,
+                              ),
                               child: Row(
                                 children: [
                                   Container(
                                     padding: const EdgeInsets.all(10),
                                     decoration: BoxDecoration(
-                                      color: (cat?.color ?? AppColors.gold).withValues(alpha: 0.15),
+                                      color: (cat?.color ?? AppColors.gold)
+                                          .withValues(alpha: 0.15),
                                       borderRadius: BorderRadius.circular(12),
                                     ),
                                     child: Icon(
@@ -246,7 +291,8 @@ class _LedgerHistoryScreenState extends State<LedgerHistoryScreen> {
                                   const SizedBox(width: 12),
                                   Expanded(
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Text(
                                           item.receiverName,
@@ -266,7 +312,8 @@ class _LedgerHistoryScreenState extends State<LedgerHistoryScreen> {
                                             color: AppColors.textSecondary,
                                           ),
                                         ),
-                                        if (item.note != null && item.note!.isNotEmpty)
+                                        if (item.note != null &&
+                                            item.note!.isNotEmpty)
                                           Text(
                                             'โน้ต: ${item.note!}',
                                             maxLines: 1,
@@ -325,7 +372,9 @@ class _LedgerHistoryScreenState extends State<LedgerHistoryScreen> {
         : AppColors.textPrimary;
     final iconColor = isSelected ? fgColor : AppColors.textSecondary;
     final shadowColor = isSelected
-        ? (color == AppColors.gold ? AppColors.goldShadow : color.withValues(alpha: 0.8))
+        ? (color == AppColors.gold
+              ? AppColors.goldShadow
+              : color.withValues(alpha: 0.8))
         : AppColors.shadowDefault;
 
     return Padding(
@@ -459,7 +508,10 @@ class _LedgerHistoryScreenState extends State<LedgerHistoryScreen> {
             width: 90,
             child: Text(
               label,
-              style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+              style: const TextStyle(
+                fontSize: 12,
+                color: AppColors.textSecondary,
+              ),
             ),
           ),
           Expanded(

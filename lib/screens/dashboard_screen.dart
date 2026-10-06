@@ -44,7 +44,10 @@ class DashboardScreen extends StatelessWidget {
       0.0,
       (sum, item) => sum + item.amount,
     );
-    final double remainingBudget = (monthlyBudget - totalSpent).clamp(0.0, monthlyBudget);
+    final double remainingBudget = (monthlyBudget - totalSpent).clamp(
+      0.0,
+      monthlyBudget,
+    );
     final double budgetPercent = monthlyBudget > 0
         ? (totalSpent / monthlyBudget).clamp(0.0, 1.0)
         : 0.0;
@@ -138,7 +141,9 @@ class DashboardScreen extends StatelessWidget {
                       label: '$streakDays วัน',
                       leading: const Text('🔥', style: TextStyle(fontSize: 14)),
                       color: AppColors.vaultTributumBg,
-                      borderColor: AppColors.vaultTributumShadow.withValues(alpha: 0.4),
+                      borderColor: AppColors.vaultTributumShadow.withValues(
+                        alpha: 0.4,
+                      ),
                       textColor: AppColors.vaultTributumShadow,
                       fontSize: 12,
                       depth: 0,
@@ -151,7 +156,10 @@ class DashboardScreen extends StatelessWidget {
             // Budget Overview Card
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 8,
+                ),
                 child: ArcadeCard(
                   borderColor: AppColors.gold.withValues(alpha: 0.35),
                   padding: const EdgeInsets.all(20),
@@ -162,7 +170,7 @@ class DashboardScreen extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           const Text(
-                            'คลังหลวงประจำเดือน',
+                            'งบประมาณประจำเดือน',
                             style: TextStyle(
                               fontSize: 13,
                               color: AppColors.textSecondary,
@@ -170,7 +178,8 @@ class DashboardScreen extends StatelessWidget {
                             ),
                           ),
                           ArcadeBadge(
-                            label: 'งบ ฿ ${shortFormatter.format(monthlyBudget)}',
+                            label:
+                                'งบ ฿ ${shortFormatter.format(monthlyBudget)}',
                             color: AppColors.gold.withValues(alpha: 0.15),
                             borderColor: AppColors.gold.withValues(alpha: 0.5),
                             textColor: AppColors.gold,
@@ -189,10 +198,7 @@ class DashboardScreen extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 12),
-                      ArcadeProgressBar(
-                        value: budgetPercent,
-                        height: 9,
-                      ),
+                      ArcadeProgressBar(value: budgetPercent, height: 9),
                       const SizedBox(height: 10),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -223,7 +229,10 @@ class DashboardScreen extends StatelessWidget {
             // Hero Pending Triage Card (Call to Action to start swiping)
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 8,
+                ),
                 child: ArcadeCard(
                   borderColor: pendingCards.isNotEmpty
                       ? AppColors.gold
@@ -278,7 +287,7 @@ class DashboardScreen extends StatelessWidget {
                             const SizedBox(height: 2),
                             Text(
                               pendingCards.isNotEmpty
-                                  ? 'ปัดเข้า 4 มุมห้องคลังเพื่อบันทึกยอดเงิน'
+                                  ? 'ปัดเข้า 4 มุมเพื่อบันทึกหมวดหมู่'
                                   : 'ยอดเยี่ยมมาก! ไม่มีสลิปค้างในสำรับ',
                               style: const TextStyle(
                                 fontSize: 11.5,
@@ -341,7 +350,11 @@ class DashboardScreen extends StatelessWidget {
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: const [
-                            Icon(Icons.document_scanner_rounded, size: 18, color: AppColors.vaultQuadriga),
+                            Icon(
+                              Icons.document_scanner_rounded,
+                              size: 18,
+                              color: AppColors.vaultQuadriga,
+                            ),
                             SizedBox(width: 6),
                             Text(
                               'กวาดสลิป',
@@ -368,7 +381,11 @@ class DashboardScreen extends StatelessWidget {
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: const [
-                            Icon(Icons.flash_on_rounded, size: 18, color: AppColors.goldShadow),
+                            Icon(
+                              Icons.flash_on_rounded,
+                              size: 18,
+                              color: AppColors.goldShadow,
+                            ),
                             SizedBox(width: 6),
                             Text(
                               'บันทึกด่วน',
@@ -387,23 +404,23 @@ class DashboardScreen extends StatelessWidget {
               ),
             ),
 
-            // 4 Vaults Section Header
+            // 4 Categories Section Header
             const SliverToBoxAdapter(
               child: Padding(
                 padding: EdgeInsets.fromLTRB(20, 18, 20, 10),
                 child: Text(
-                  '4 คลังหลวงจักรวรรดิ (Four Vaults)',
+                  '4 หมวดหมู่ค่าใช้จ่าย',
                   style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.bold,
-                    letterSpacing: 0.5,
-                    color: AppColors.gold,
+                    letterSpacing: 0.3,
+                    color: AppColors.marbleWhite,
                   ),
                 ),
               ),
             ),
 
-            // 4 Vaults 2x2 Grid
+            // 4 Vaults 2x2 Grid (Filled Vibrant Cartoon Tiles)
             SliverPadding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               sliver: SliverGrid(
@@ -413,72 +430,84 @@ class DashboardScreen extends StatelessWidget {
                   mainAxisSpacing: 12,
                   childAspectRatio: 1.28,
                 ),
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) {
-                    final cat = ExpenseCategory.defaultCorners[index];
-                    final amount = categoryTotals[cat.id] ?? 0.0;
-                    final count = categoryCounts[cat.id] ?? 0;
+                delegate: SliverChildBuilderDelegate((context, index) {
+                  final cat = ExpenseCategory.defaultCorners[index];
+                  final amount = categoryTotals[cat.id] ?? 0.0;
+                  final count = categoryCounts[cat.id] ?? 0;
 
-                    return ArcadeCard(
-                      onTap: () => onSelectVault(cat),
-                      borderColor: cat.color,
-                      borderWidth: 1.8,
-                      shadowColor: cat.shadowColor,
-                      depth: 3.5,
-                      padding: const EdgeInsets.all(14),
-                      child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                  return ArcadeCard(
+                    onTap: () => onSelectVault(cat),
+                    color: cat.color,
+                    borderColor: cat.shadowColor,
+                    borderWidth: 2.0,
+                    shadowColor: cat.shadowColor,
+                    depth: 3.5,
+                    padding: const EdgeInsets.all(14),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(7),
-                                  decoration: BoxDecoration(
-                                    color: cat.color.withValues(alpha: 0.15),
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  child: Icon(cat.icon, color: cat.color, size: 18),
-                                ),
-                                Text(
-                                  cat.romanNumeral,
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w900,
-                                    color: cat.color,
-                                  ),
-                                ),
-                              ],
+                            Container(
+                              padding: const EdgeInsets.all(7),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.25),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Icon(
+                                cat.icon,
+                                color: Colors.white,
+                                size: 18,
+                              ),
                             ),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  cat.thaiTitle,
-                                  style: const TextStyle(
-                                    fontSize: 12.5,
-                                    fontWeight: FontWeight.w600,
-                                    color: AppColors.marbleWhite,
-                                  ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 7,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.black.withValues(alpha: 0.14),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                '${index + 1}',
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w900,
+                                  color: Colors.white,
                                 ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  '฿ ${shortFormatter.format(amount)} ($count ใบ)',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w900,
-                                    color: cat.color,
-                                  ),
-                                ),
-                              ],
+                              ),
                             ),
                           ],
                         ),
-                      );
-                  },
-                  childCount: ExpenseCategory.defaultCorners.length,
-                ),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              cat.thaiTitle,
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w800,
+                                color: Colors.white,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              '฿ ${shortFormatter.format(amount)} ($count ใบ)',
+                              style: TextStyle(
+                                fontSize: 13.5,
+                                fontWeight: FontWeight.w900,
+                                color: Colors.white.withValues(alpha: 0.95),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  );
+                }, childCount: ExpenseCategory.defaultCorners.length),
               ),
             ),
 
@@ -490,7 +519,7 @@ class DashboardScreen extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     const Text(
-                      'รายการที่เพิ่งคัดแยก (Recent Triage)',
+                      'รายการที่เพิ่งคัดแยก (Recent Items)',
                       style: TextStyle(
                         fontSize: 14.5,
                         fontWeight: FontWeight.bold,
@@ -513,7 +542,10 @@ class DashboardScreen extends StatelessWidget {
             if (categorizedCards.isEmpty)
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 16,
+                  ),
                   child: ArcadeCard(
                     color: AppColors.surfaceLight,
                     borderColor: AppColors.border,
@@ -537,7 +569,10 @@ class DashboardScreen extends StatelessWidget {
                   (context, index) {
                     final item = categorizedCards.reversed.toList()[index];
                     return Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 4,
+                      ),
                       child: ArcadeCard(
                         onTap: () => onViewSlip(item),
                         depth: 2.5,
@@ -551,7 +586,9 @@ class DashboardScreen extends StatelessWidget {
                               width: 10,
                               height: 10,
                               decoration: BoxDecoration(
-                                color: item.assignedCategory?.color ?? item.bankColor,
+                                color:
+                                    item.assignedCategory?.color ??
+                                    item.bankColor,
                                 shape: BoxShape.circle,
                               ),
                             ),
@@ -608,13 +645,13 @@ class DashboardScreen extends StatelessWidget {
                       ),
                     );
                   },
-                  childCount: categorizedCards.length > 5 ? 5 : categorizedCards.length,
+                  childCount: categorizedCards.length > 5
+                      ? 5
+                      : categorizedCards.length,
                 ),
               ),
 
-            const SliverToBoxAdapter(
-              child: SizedBox(height: 100),
-            ),
+            const SliverToBoxAdapter(child: SizedBox(height: 100)),
           ],
         ),
       ),

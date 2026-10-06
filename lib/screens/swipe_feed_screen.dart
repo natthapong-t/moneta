@@ -106,7 +106,10 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
                       ),
                       Text(
                         'วิเคราะห์สลิปและคัดกรองอัตโนมัติ On-Device',
-                        style: TextStyle(fontSize: 11.5, color: AppColors.textSecondary),
+                        style: TextStyle(
+                          fontSize: 11.5,
+                          color: AppColors.textSecondary,
+                        ),
                       ),
                     ],
                   ),
@@ -116,7 +119,10 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
 
               // Option 1: Auto-scan device gallery
               ListTile(
-                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 4,
+                ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
                   side: const BorderSide(color: AppColors.gold, width: 1.2),
@@ -144,7 +150,10 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
                 ),
                 subtitle: const Text(
                   'ขอสิทธิ์คลังภาพ และค้นหาเฉพาะรูปที่เป็นสลิปเข้าสู่สำรับทันที',
-                  style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: AppColors.textSecondary,
+                  ),
                 ),
                 onTap: () {
                   Navigator.pop(ctx);
@@ -159,7 +168,10 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
 
               // Option 2: Manual Pick
               ListTile(
-                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 4,
+                ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
                   side: const BorderSide(color: AppColors.surfaceLight),
@@ -187,7 +199,10 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
                 ),
                 subtitle: const Text(
                   'เปิดหน้าเลือกรูปภาพเพื่อเลือกรูปสลิปที่ต้องการทีละหลายรูป',
-                  style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: AppColors.textSecondary,
+                  ),
                 ),
                 onTap: () {
                   Navigator.pop(ctx);
@@ -232,7 +247,10 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
                   const SizedBox(
                     width: 48,
                     height: 48,
-                    child: CircularProgressIndicator(color: AppColors.gold, strokeWidth: 3),
+                    child: CircularProgressIndicator(
+                      color: AppColors.gold,
+                      strokeWidth: 3,
+                    ),
                   ),
                   const SizedBox(height: 20),
                   const Text(
@@ -249,7 +267,11 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
                         ? 'วิเคราะห์รูปภาพ ($current/$total)\nพบสลิปธนาคารแล้ว $found ใบ'
                         : 'กำลังขอสิทธิ์และเข้าถึงคลังภาพล่าสุด...',
                     textAlign: TextAlign.center,
-                    style: const TextStyle(fontSize: 12.5, color: AppColors.textSecondary, height: 1.4),
+                    style: const TextStyle(
+                      fontSize: 12.5,
+                      color: AppColors.textSecondary,
+                      height: 1.4,
+                    ),
                   ),
                 ],
               ),
@@ -260,7 +282,9 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
     );
 
     try {
-      final imagePaths = await _slipParser.scanDeviceGalleryImagePaths(limit: null);
+      final imagePaths = await _slipParser.scanDeviceGalleryImagePaths(
+        limit: null,
+      );
       total = imagePaths.length;
       if (mounted && _progressDialogStateSetter != null) {
         _progressDialogStateSetter!(() {});
@@ -282,7 +306,10 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
             ),
             content: const Text(
               'ไม่พบรูปภาพใหม่หรือยังไม่ได้รับสิทธิ์เข้าถึงคลังภาพ',
-              style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                color: AppColors.textPrimary,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
         );
@@ -306,7 +333,9 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
 
       final uniqueItems = parsedItems.where((item) {
         final inPending = _pendingCards.any((p) => p.isDuplicateOf(item));
-        final inCategorized = _categorizedCards.any((c) => c.isDuplicateOf(item));
+        final inCategorized = _categorizedCards.any(
+          (c) => c.isDuplicateOf(item),
+        );
         return !inPending && !inCategorized;
       }).toList();
 
@@ -332,12 +361,15 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
           content: Text(
             uniqueItems.isNotEmpty
                 ? (duplicatesSkipped > 0
-                    ? 'กวาดพบสลิปใหม่ ${uniqueItems.length} ใบ (ข้ามสลิปซ้ำ $duplicatesSkipped ใบ)'
-                    : 'กวาดพบสลิปใหม่ ${uniqueItems.length} ใบจากคลังภาพ พร้อมให้ปัดแล้ว!')
+                      ? 'กวาดพบสลิปใหม่ ${uniqueItems.length} ใบ (ข้ามสลิปซ้ำ $duplicatesSkipped ใบ)'
+                      : 'กวาดพบสลิปใหม่ ${uniqueItems.length} ใบจากคลังภาพ พร้อมให้ปัดแล้ว!')
                 : (duplicatesSkipped > 0
-                    ? 'สลิปทั้ง $duplicatesSkipped ใบมีอยู่ในระบบแล้ว (ไม่เพิ่มซ้ำ)'
-                    : 'กวาดตรวจแล้ว ${imagePaths.length} รูป แต่ไม่พบสลิปธนาคารใหม่'),
-            style: const TextStyle(color: AppColors.marbleWhite, fontWeight: FontWeight.bold),
+                      ? 'สลิปทั้ง $duplicatesSkipped ใบมีอยู่ในระบบแล้ว (ไม่เพิ่มซ้ำ)'
+                      : 'กวาดตรวจแล้ว ${imagePaths.length} รูป แต่ไม่พบสลิปธนาคารใหม่'),
+            style: const TextStyle(
+              color: AppColors.marbleWhite,
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ),
       );
@@ -372,7 +404,10 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
             const SizedBox(
               width: 16,
               height: 16,
-              child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.goldShadow),
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: AppColors.goldShadow,
+              ),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -424,12 +459,15 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
         content: Text(
           uniqueItems.isNotEmpty
               ? (duplicatesSkipped > 0
-                  ? 'เพิ่มสลิปใหม่ ${uniqueItems.length} รายการ (ข้ามสลิปซ้ำ $duplicatesSkipped รายการ)'
-                  : 'สแกนพบสลิป ${uniqueItems.length} รายการ พร้อมให้ปัดเข้าหมวดหมู่แล้ว!')
+                    ? 'เพิ่มสลิปใหม่ ${uniqueItems.length} รายการ (ข้ามสลิปซ้ำ $duplicatesSkipped รายการ)'
+                    : 'สแกนพบสลิป ${uniqueItems.length} รายการ พร้อมให้ปัดเข้าหมวดหมู่แล้ว!')
               : (duplicatesSkipped > 0
-                  ? 'สลิปทั้ง $duplicatesSkipped รายการมีอยู่ในระบบแล้ว (ไม่เพิ่มซ้ำ)'
-                  : 'ตรวจไม่พบข้อมูลสลิปที่สมบูรณ์ในรูปที่เลือก'),
-          style: const TextStyle(color: AppColors.marbleWhite, fontWeight: FontWeight.bold),
+                    ? 'สลิปทั้ง $duplicatesSkipped รายการมีอยู่ในระบบแล้ว (ไม่เพิ่มซ้ำ)'
+                    : 'ตรวจไม่พบข้อมูลสลิปที่สมบูรณ์ในรูปที่เลือก'),
+          style: const TextStyle(
+            color: AppColors.marbleWhite,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ),
     );
@@ -567,8 +605,7 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
       if (cat != null) {
         _categoryTotals[cat.id] =
             (_categoryTotals[cat.id] ?? 0.0) - lastItem.amount;
-        _categoryCounts[cat.id] =
-            (_categoryCounts[cat.id] ?? 1) - 1;
+        _categoryCounts[cat.id] = (_categoryCounts[cat.id] ?? 1) - 1;
       }
     });
 
@@ -609,8 +646,7 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
           _pendingCards.insert(0, item.copyWith(assignedCategory: null));
           _categoryTotals[cat.id] =
               (_categoryTotals[cat.id] ?? 0.0) - item.amount;
-          _categoryCounts[cat.id] =
-              (_categoryCounts[cat.id] ?? 1) - 1;
+          _categoryCounts[cat.id] = (_categoryCounts[cat.id] ?? 1) - 1;
         });
         widget.onRestoreItem?.call(item);
       },
@@ -696,13 +732,19 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
                       // Streak Badge - Cartoon 3D Flame Pill
                       ArcadeBadge(
                         label: '7 วัน',
-                        leading: const Text('🔥', style: TextStyle(fontSize: 12)),
+                        leading: const Text(
+                          '🔥',
+                          style: TextStyle(fontSize: 12),
+                        ),
                         color: const Color(0xFFFFF7ED),
                         borderColor: const Color(0xFFF97316),
                         shadowColor: const Color(0xFFEA580C),
                         textColor: const Color(0xFFEA580C),
                         depth: 2.0,
-                        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 9,
+                          vertical: 4,
+                        ),
                       ),
                       const SizedBox(width: 6),
 
@@ -716,7 +758,10 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
                         iconColor: AppColors.vaultQuadrigaShadow,
                         textColor: AppColors.textPrimary,
                         depth: 2.0,
-                        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 9,
+                          vertical: 4,
+                        ),
                       ),
                     ],
                   ),
@@ -726,8 +771,8 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
 
             // Top-Left Vault (1. Food)
             Positioned(
-              top: 60,
-              left: 14,
+              top: 54,
+              left: 12,
               child: CornerTargetBox(
                 category: tavernaCat,
                 isHovered: _hoveredCorner == CornerPosition.topLeft,
@@ -739,8 +784,8 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
 
             // Top-Right Vault (2. Transport)
             Positioned(
-              top: 60,
-              right: 14,
+              top: 54,
+              right: 12,
               child: CornerTargetBox(
                 category: quadrigaCat,
                 isHovered: _hoveredCorner == CornerPosition.topRight,
@@ -750,10 +795,10 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
               ),
             ),
 
-            // Bottom-Left Vault (3. Shopping) - Positioned at 136 to clear action bar & dock
+            // Bottom-Left Vault (3. Shopping) - Positioned at 128 to clear action bar & dock
             Positioned(
-              bottom: 136,
-              left: 14,
+              bottom: 128,
+              left: 12,
               child: CornerTargetBox(
                 category: forumCat,
                 isHovered: _hoveredCorner == CornerPosition.bottomLeft,
@@ -763,10 +808,10 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
               ),
             ),
 
-            // Bottom-Right Vault (4. Bills) - Positioned at 136 to clear action bar & dock
+            // Bottom-Right Vault (4. Bills) - Positioned at 128 to clear action bar & dock
             Positioned(
-              bottom: 136,
-              right: 14,
+              bottom: 128,
+              right: 12,
               child: CornerTargetBox(
                 category: tributumCat,
                 isHovered: _hoveredCorner == CornerPosition.bottomRight,
@@ -779,7 +824,7 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
             // Center Card Stack or Cartoon Triumph Empty State
             Center(
               child: _pendingCards.isEmpty
-                  ? _buildRomanTriumphState()
+                  ? _buildCompletionState()
                   : _buildCardStack(),
             ),
 
@@ -794,7 +839,9 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
                   Opacity(
                     opacity: _categorizedCards.isEmpty ? 0.45 : 1.0,
                     child: ArcadeButton(
-                      onPressed: _categorizedCards.isEmpty ? null : _undoLastAction,
+                      onPressed: _categorizedCards.isEmpty
+                          ? null
+                          : _undoLastAction,
                       color: AppColors.surface,
                       shadowColor: AppColors.shadowDefault,
                       borderColor: AppColors.borderDark,
@@ -921,9 +968,11 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
     return Stack(
       alignment: Alignment.center,
       children: [
-        for (int i = (_pendingCards.length > 3 ? 2 : _pendingCards.length - 1);
-            i >= 0;
-            i--)
+        for (
+          int i = (_pendingCards.length > 3 ? 2 : _pendingCards.length - 1);
+          i >= 0;
+          i--
+        )
           _buildStackedCard(i),
       ],
     );
@@ -957,7 +1006,7 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
     );
   }
 
-  Widget _buildRomanTriumphState() {
+  Widget _buildCompletionState() {
     double grandTotal = 0;
     for (var val in _categoryTotals.values) {
       grandTotal += val;
@@ -966,8 +1015,8 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
     final currencyFormatter = NumberFormat('#,##0.00', 'th_TH');
 
     return Container(
-      width: 318,
-      padding: const EdgeInsets.all(22),
+      width: 275,
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(24),

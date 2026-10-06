@@ -72,7 +72,9 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
   }
 
   void _onCardCategorized(ExpenseCardItem item, CornerPosition corner) {
-    final cat = ExpenseCategory.defaultCorners.firstWhere((c) => c.corner == corner);
+    final cat = ExpenseCategory.defaultCorners.firstWhere(
+      (c) => c.corner == corner,
+    );
     final updatedItem = item.copyWith(assignedCategory: cat);
 
     setState(() {
@@ -84,7 +86,9 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
 
     // Mark reference number as processed to prevent duplicates
     if (item.referenceNo.isNotEmpty) {
-      ExpenseStorageService.instance.markReferencesProcessed([item.referenceNo]);
+      ExpenseStorageService.instance.markReferencesProcessed([
+        item.referenceNo,
+      ]);
     }
   }
 
@@ -109,7 +113,9 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
   void _onSlipsImported(List<ExpenseCardItem> newItems) {
     final uniqueItems = newItems.where((newItem) {
       final inPending = _pendingCards.any((p) => p.isDuplicateOf(newItem));
-      final inCategorized = _categorizedCards.any((c) => c.isDuplicateOf(newItem));
+      final inCategorized = _categorizedCards.any(
+        (c) => c.isDuplicateOf(newItem),
+      );
       return !inPending && !inCategorized;
     }).toList();
 
@@ -163,7 +169,8 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
       _scanningStatus = 'กำลังเตรียมค้นหาในคลังภาพ...';
     });
 
-    final processedRefs = await ExpenseStorageService.instance.getProcessedReferenceNumbers();
+    final processedRefs = await ExpenseStorageService.instance
+        .getProcessedReferenceNumbers();
     final knownRefs = <String>{
       ...processedRefs,
       ..._pendingCards.map((p) => p.referenceNo).where((r) => r.isNotEmpty),
@@ -171,7 +178,9 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
     };
     final knownPaths = <String>{
       ..._pendingCards.map((p) => p.imagePath ?? '').where((p) => p.isNotEmpty),
-      ..._categorizedCards.map((c) => c.imagePath ?? '').where((p) => p.isNotEmpty),
+      ..._categorizedCards
+          .map((c) => c.imagePath ?? '')
+          .where((p) => p.isNotEmpty),
     };
 
     _scanSubscription?.cancel();
@@ -182,48 +191,52 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
           knownImagePaths: knownPaths,
         )
         .listen(
-      (progress) {
-        if (!mounted) return;
+          (progress) {
+            if (!mounted) return;
 
-        setState(() {
-          _scanningStatus =
-              'กำลังกวาดสลิป... ${progress.scanned}/${progress.total} (พบ ${progress.foundCount} สลิป)';
+            setState(() {
+              _scanningStatus =
+                  'กำลังกวาดสลิป... ${progress.scanned}/${progress.total} (พบ ${progress.foundCount} สลิป)';
 
-          if (progress.newSlip != null) {
-            final newSlip = progress.newSlip!;
-            final alreadyInPending = _pendingCards.any((p) => p.isDuplicateOf(newSlip));
-            final alreadyInCategorized = _categorizedCards.any((c) => c.isDuplicateOf(newSlip));
+              if (progress.newSlip != null) {
+                final newSlip = progress.newSlip!;
+                final alreadyInPending = _pendingCards.any(
+                  (p) => p.isDuplicateOf(newSlip),
+                );
+                final alreadyInCategorized = _categorizedCards.any(
+                  (c) => c.isDuplicateOf(newSlip),
+                );
 
-            if (!alreadyInPending && !alreadyInCategorized) {
-              _pendingCards.insert(0, newSlip);
-              HapticFeedback.lightImpact();
+                if (!alreadyInPending && !alreadyInCategorized) {
+                  _pendingCards.insert(0, newSlip);
+                  HapticFeedback.lightImpact();
+                }
+              }
+            });
+
+            if (progress.newSlip != null) {
+              _saveAllData();
             }
-          }
-        });
 
-        if (progress.newSlip != null) {
-          _saveAllData();
-        }
-
-        if (progress.isFinished) {
-          _finishBackgroundScan(progress.foundCount);
-        }
-      },
-      onError: (err) {
-        debugPrint('Error during background scan: $err');
-        if (mounted) {
-          setState(() {
-            _isBackgroundScanning = false;
-            _scanningStatus = '';
-          });
-        }
-      },
-      onDone: () {
-        if (mounted && _isBackgroundScanning) {
-          _finishBackgroundScan(0);
-        }
-      },
-    );
+            if (progress.isFinished) {
+              _finishBackgroundScan(progress.foundCount);
+            }
+          },
+          onError: (err) {
+            debugPrint('Error during background scan: $err');
+            if (mounted) {
+              setState(() {
+                _isBackgroundScanning = false;
+                _scanningStatus = '';
+              });
+            }
+          },
+          onDone: () {
+            if (mounted && _isBackgroundScanning) {
+              _finishBackgroundScan(0);
+            }
+          },
+        );
   }
 
   void _finishBackgroundScan(int found) {
@@ -243,7 +256,10 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
           found > 0
               ? 'กวาดตรวจเสร็จสิ้น! พบสลิปใหม่ $found ใบพร้อมให้ปัดแล้ว'
               : 'กวาดตรวจคลังภาพครบแล้ว ไม่พบสลิปธนาคารใหม่',
-          style: const TextStyle(color: AppColors.marbleWhite, fontWeight: FontWeight.bold),
+          style: const TextStyle(
+            color: AppColors.marbleWhite,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ),
     );
@@ -288,9 +304,7 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
     if (_isLoading) {
       return const Scaffold(
         backgroundColor: AppColors.background,
-        body: Center(
-          child: CircularProgressIndicator(color: AppColors.gold),
-        ),
+        body: Center(child: CircularProgressIndicator(color: AppColors.gold)),
       );
     }
 
@@ -354,11 +368,17 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
               right: 20,
               child: SafeArea(
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
                     color: AppColors.surface,
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: AppColors.vaultQuadrigaShadow, width: 2.0),
+                    border: Border.all(
+                      color: AppColors.vaultQuadrigaShadow,
+                      width: 2.0,
+                    ),
                     boxShadow: const [
                       BoxShadow(
                         color: AppColors.vaultQuadrigaShadow,
@@ -401,8 +421,15 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
                         },
                         borderRadius: BorderRadius.circular(12),
                         child: const Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                          child: Icon(Icons.close_rounded, size: 18, color: AppColors.textSecondary),
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
+                          child: Icon(
+                            Icons.close_rounded,
+                            size: 18,
+                            color: AppColors.textSecondary,
+                          ),
                         ),
                       ),
                     ],
@@ -429,10 +456,7 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(28),
-        border: Border.all(
-          color: AppColors.borderDark,
-          width: 2.0,
-        ),
+        border: Border.all(color: AppColors.borderDark, width: 2.0),
         boxShadow: const [
           BoxShadow(
             color: AppColors.shadowDefault,
@@ -447,7 +471,7 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
           _buildNavItem(
             index: 0,
             icon: Icons.dashboard_rounded,
-            label: 'คลังหลวง',
+            label: 'หน้าหลัก',
           ),
           _buildNavItem(
             index: 1,
@@ -458,7 +482,7 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
           _buildNavItem(
             index: 2,
             icon: Icons.receipt_long_rounded,
-            label: 'บันทึกคลัง',
+            label: 'ประวัติรายการ',
           ),
           _buildNavItem(
             index: 3,
@@ -473,7 +497,7 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
   Widget _buildNavItem({
     required int index,
     required IconData icon,
-    required String label,
+    String? label,
     int? badgeCount,
   }) {
     final bool isSelected = _currentIndex == index;
@@ -488,13 +512,13 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
       behavior: HitTestBehavior.opaque,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 150),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
           color: isSelected ? AppColors.gold : Colors.transparent,
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(16),
           border: isSelected
               ? Border.all(color: AppColors.goldShadow, width: 1.8)
-              : Border.all(color: Colors.transparent),
+              : Border.all(color: Colors.transparent, width: 1.8),
           boxShadow: isSelected
               ? const [
                   BoxShadow(
@@ -505,65 +529,53 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
                 ]
               : null,
         ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
+        child: Stack(
+          clipBehavior: Clip.none,
           children: [
-            Stack(
-              clipBehavior: Clip.none,
-              children: [
-                Icon(
-                  icon,
-                  size: 20,
-                  color: isSelected ? const Color(0xFF1E293B) : AppColors.textSecondary,
-                ),
-                if (badgeCount != null && badgeCount > 0)
-                  Positioned(
-                    top: -6,
-                    right: -8,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                      decoration: BoxDecoration(
-                        color: AppColors.vaultTaverna,
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: Colors.white, width: 1.2),
-                        boxShadow: const [
-                          BoxShadow(
-                            color: AppColors.vaultTavernaShadow,
-                            offset: Offset(0, 1),
-                            blurRadius: 0,
-                          ),
-                        ],
+            Icon(
+              icon,
+              size: 22,
+              color: isSelected
+                  ? const Color(0xFF1E293B)
+                  : AppColors.textSecondary,
+            ),
+            if (badgeCount != null && badgeCount > 0)
+              Positioned(
+                top: -6,
+                right: -8,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 4,
+                    vertical: 1,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.vaultTaverna,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Colors.white, width: 1.2),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: AppColors.vaultTavernaShadow,
+                        offset: Offset(0, 1),
+                        blurRadius: 0,
                       ),
-                      constraints: const BoxConstraints(
-                        minWidth: 16,
-                        minHeight: 16,
-                      ),
-                      child: Center(
-                        child: Text(
-                          badgeCount > 99 ? '99+' : '$badgeCount',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 9,
-                            fontWeight: FontWeight.w900,
-                          ),
-                        ),
+                    ],
+                  ),
+                  constraints: const BoxConstraints(
+                    minWidth: 16,
+                    minHeight: 16,
+                  ),
+                  child: Center(
+                    child: Text(
+                      badgeCount > 99 ? '99+' : '$badgeCount',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 9,
+                        fontWeight: FontWeight.w900,
                       ),
                     ),
                   ),
-              ],
-            ),
-            if (isSelected) ...[
-              const SizedBox(width: 6),
-              Text(
-                label,
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w900,
-                  color: Color(0xFF1E293B),
-                  letterSpacing: 0.2,
                 ),
               ),
-            ],
           ],
         ),
       ),

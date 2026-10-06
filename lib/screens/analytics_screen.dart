@@ -47,9 +47,7 @@ class AnalyticsScreen extends StatelessWidget {
         : 0.0;
 
     // Daily average (over past 30 days or active days)
-    final double dailyAvg = transactions.isNotEmpty
-        ? totalSpent / 30.0
-        : 0.0;
+    final double dailyAvg = transactions.isNotEmpty ? totalSpent / 30.0 : 0.0;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -65,7 +63,7 @@ class AnalyticsScreen extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   const Text(
-                    'รายงานคลังสภา (Senate Treasury)',
+                    'รายงานและสถิติ (Analytics)',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w900,
@@ -74,7 +72,11 @@ class AnalyticsScreen extends StatelessWidget {
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.tune_rounded, color: AppColors.gold, size: 20),
+                    icon: const Icon(
+                      Icons.tune_rounded,
+                      color: AppColors.gold,
+                      size: 20,
+                    ),
                     tooltip: 'ตั้งค่างบประมาณ',
                     onPressed: () => _showBudgetDialog(context),
                   ),
@@ -120,7 +122,8 @@ class AnalyticsScreen extends StatelessWidget {
                         Expanded(
                           child: _buildMetricPill(
                             label: 'สัดส่วนต่องบ',
-                            value: '${(budgetPercent * 100).toStringAsFixed(1)}%',
+                            value:
+                                '${(budgetPercent * 100).toStringAsFixed(1)}%',
                           ),
                         ),
                       ],
@@ -163,7 +166,7 @@ class AnalyticsScreen extends StatelessWidget {
                           Text(
                             budgetPercent > 0.85
                                 ? 'แจ้งเตือน: ใกล้เต็มเพดานงบประมาณ!'
-                                : 'สภาโรมัน: สถานะคลังหลวงแข็งแกร่ง',
+                                : 'สถานะการเงิน: ควบคุมได้ดีเยี่ยม',
                             style: TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.bold,
@@ -193,7 +196,7 @@ class AnalyticsScreen extends StatelessWidget {
 
               // Category Breakdown Title
               const Text(
-                'สัดส่วนรายจ่าย 4 เสาหลัก (Category Share)',
+                'สัดส่วนรายจ่ายตามหมวดหมู่ (Category Share)',
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.bold,
@@ -230,7 +233,10 @@ class AnalyticsScreen extends StatelessWidget {
         children: [
           Text(
             label,
-            style: const TextStyle(fontSize: 10.5, color: AppColors.textSecondary),
+            style: const TextStyle(
+              fontSize: 10.5,
+              color: AppColors.textSecondary,
+            ),
           ),
           const SizedBox(height: 2),
           Text(
@@ -291,7 +297,10 @@ class AnalyticsScreen extends StatelessWidget {
                   ),
                   Text(
                     '(${(pct * 100).toStringAsFixed(1)}%)',
-                    style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: AppColors.textSecondary,
+                    ),
                   ),
                 ],
               ),
@@ -322,7 +331,11 @@ class AnalyticsScreen extends StatelessWidget {
         ),
         title: const Text(
           'ตั้งค่างบประมาณประจำเดือน',
-          style: TextStyle(color: AppColors.gold, fontSize: 16, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            color: AppColors.gold,
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -337,7 +350,10 @@ class AnalyticsScreen extends StatelessWidget {
                 ),
               ),
               trailing: isSelected
-                  ? const Icon(Icons.check_circle_rounded, color: AppColors.gold)
+                  ? const Icon(
+                      Icons.check_circle_rounded,
+                      color: AppColors.gold,
+                    )
                   : null,
               onTap: () {
                 onUpdateBudget(b);

@@ -99,11 +99,11 @@ class VaultDetailsSheet extends StatelessWidget {
                       Row(
                         children: [
                           Text(
-                            category.latinTitle,
+                            category.thaiTitle,
                             style: const TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.w900,
-                              letterSpacing: 0.8,
+                              letterSpacing: 0.3,
                               color: AppColors.marbleWhite,
                             ),
                           ),
@@ -130,7 +130,7 @@ class VaultDetailsSheet extends StatelessWidget {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        category.thaiTitle,
+                        category.latinTitle,
                         style: const TextStyle(
                           fontSize: 12,
                           color: AppColors.textSecondary,
@@ -142,7 +142,10 @@ class VaultDetailsSheet extends StatelessWidget {
               ),
               IconButton(
                 onPressed: () => Navigator.of(context).pop(),
-                icon: const Icon(Icons.close_rounded, color: AppColors.textMuted),
+                icon: const Icon(
+                  Icons.close_rounded,
+                  color: AppColors.textMuted,
+                ),
               ),
             ],
           ),
@@ -156,16 +159,17 @@ class VaultDetailsSheet extends StatelessWidget {
             decoration: BoxDecoration(
               color: AppColors.background,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: category.color.withValues(alpha: 0.3),
-              ),
+              border: Border.all(color: category.color.withValues(alpha: 0.3)),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text(
                   'ยอดรวมในหมวดนี้',
-                  style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: AppColors.textSecondary,
+                  ),
                 ),
                 Text(
                   '฿ ${currencyFormatter.format(totalAmount)}',
@@ -215,7 +219,8 @@ class VaultDetailsSheet extends StatelessWidget {
                   )
                 : ListView.separated(
                     itemCount: items.length,
-                    separatorBuilder: (context, index) => const SizedBox(height: 10),
+                    separatorBuilder: (context, index) =>
+                        const SizedBox(height: 10),
                     itemBuilder: (context, index) {
                       final item = items[index];
                       return Container(
@@ -277,7 +282,8 @@ class VaultDetailsSheet extends StatelessWidget {
                                       ),
                                     ],
                                   ),
-                                  if (item.note != null && item.note!.isNotEmpty) ...[
+                                  if (item.note != null &&
+                                      item.note!.isNotEmpty) ...[
                                     const SizedBox(height: 2),
                                     Text(
                                       item.note!,
@@ -285,7 +291,8 @@ class VaultDetailsSheet extends StatelessWidget {
                                       overflow: TextOverflow.ellipsis,
                                       style: TextStyle(
                                         fontSize: 11,
-                                        color: AppColors.textSecondary.withValues(alpha: 0.8),
+                                        color: AppColors.textSecondary
+                                            .withValues(alpha: 0.8),
                                       ),
                                     ),
                                   ],
