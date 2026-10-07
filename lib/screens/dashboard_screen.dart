@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import '../core/constants/categories.dart';
 import '../core/theme/app_theme.dart';
@@ -20,6 +21,8 @@ class DashboardScreen extends StatelessWidget {
   final VoidCallback? onOpenCalendar;
   final Function(ExpenseCategory) onSelectVault;
   final Function(ExpenseCardItem) onViewSlip;
+  final VoidCallback? onResetToSample;
+  final VoidCallback? onClearAllData;
 
   const DashboardScreen({
     super.key,
@@ -34,6 +37,8 @@ class DashboardScreen extends StatelessWidget {
     this.onOpenCalendar,
     required this.onSelectVault,
     required this.onViewSlip,
+    this.onResetToSample,
+    this.onClearAllData,
   });
 
   @override
@@ -154,17 +159,41 @@ class DashboardScreen extends StatelessWidget {
                       ],
                     ),
 
-                    // Streak Badge
-                    ArcadeBadge(
-                      label: '$streakDays วัน',
-                      leading: const Text('🔥', style: TextStyle(fontSize: 14)),
-                      color: AppColors.vaultTributumBg,
-                      borderColor: AppColors.vaultTributumShadow.withValues(
-                        alpha: 0.4,
-                      ),
-                      textColor: AppColors.vaultTributumShadow,
-                      fontSize: 12,
-                      depth: 0,
+                    Row(
+                      children: [
+                        // Streak Badge
+                        ArcadeBadge(
+                          label: '$streakDays วัน',
+                          leading: const Text('🔥', style: TextStyle(fontSize: 14)),
+                          color: AppColors.vaultTributumBg,
+                          borderColor: AppColors.vaultTributumShadow.withValues(
+                            alpha: 0.4,
+                          ),
+                          textColor: AppColors.vaultTributumShadow,
+                          fontSize: 12,
+                          depth: 0,
+                        ),
+                        const SizedBox(width: 8),
+
+                        // Start Fresh / Reset Button
+                        ArcadeButton(
+                          onPressed: () => _showResetDialog(context),
+                          color: AppColors.surface,
+                          shadowColor: AppColors.shadowDefault,
+                          borderColor: AppColors.borderDark,
+                          borderWidth: 1.8,
+                          depth: 2.5,
+                          borderRadius: BorderRadius.circular(14),
+                          padding: EdgeInsets.zero,
+                          width: 36,
+                          height: 32,
+                          child: const Icon(
+                            Icons.restart_alt_rounded,
+                            size: 19,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -732,6 +761,110 @@ class DashboardScreen extends StatelessWidget {
             const SliverToBoxAdapter(child: SizedBox(height: 100)),
           ],
         ),
+      ),
+    );
+  }
+
+  void _showResetDialog(BuildContext context) {
+    HapticFeedback.lightImpact();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(22),
+          side: const BorderSide(color: AppColors.borderDark, width: 2.2),
+        ),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFEF3C7),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFFD97706), width: 1.5),
+              ),
+              child: const Icon(
+                Icons.restart_alt_rounded,
+                color: Color(0xFFD97706),
+                size: 22,
+              ),
+            ),
+            const SizedBox(width: 12),
+            const Expanded(
+              child: Text(
+                'เริ่มต้นใหม่ (Start Fresh)',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w900,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+            ),
+          ],
+        ),
+        content: const Text(
+          'ต้องการล้างข้อมูลเพื่อเริ่มทดสอบใหม่แบบใด?\n\n• สลิปตัวอย่าง: ดึงสลิปจำลอง 6 ใบมาให้ลองปัดใหม่\n• ล้างเกลี้ยง: ล้างสลิปและประวัติทั้งหมดเป็น 0',
+          style: TextStyle(
+            fontSize: 12.5,
+            color: AppColors.textSecondary,
+            height: 1.45,
+          ),
+        ),
+        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        actions: [
+          Row(
+            children: [
+              Expanded(
+                child: ArcadeButton(
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    onResetToSample?.call();
+                  },
+                  color: const Color(0xFFFEF3C7),
+                  shadowColor: const Color(0xFFD97706),
+                  borderColor: const Color(0xFFD97706),
+                  borderWidth: 1.8,
+                  depth: 3.0,
+                  borderRadius: BorderRadius.circular(14),
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  child: const Text(
+                    'สลิปตัวอย่าง',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w900,
+                      color: Color(0xFF92400E),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: ArcadeButton(
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    onClearAllData?.call();
+                  },
+                  color: const Color(0xFFFEE2E2),
+                  shadowColor: const Color(0xFFDC2626),
+                  borderColor: const Color(0xFFDC2626),
+                  borderWidth: 1.8,
+                  depth: 3.0,
+                  borderRadius: BorderRadius.circular(14),
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  child: const Text(
+                    'ล้างเกลี้ยง (0 ใบ)',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w900,
+                      color: Color(0xFF991B1B),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

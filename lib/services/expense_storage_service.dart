@@ -116,6 +116,18 @@ class ExpenseStorageService {
     }
   }
 
+  /// Completely clear all pending, categorized expenses and processed references
+  Future<void> clearAllData() async {
+    try {
+      final p = await prefs;
+      await p.setStringList(_keyPending, []);
+      await p.setStringList(_keyCategorized, []);
+      await p.remove(_keyProcessedRefs);
+    } catch (e) {
+      debugPrint('Error clearing all data: $e');
+    }
+  }
+
   /// Monthly budget limit (Default: ฿15,000)
   Future<double> getMonthlyBudget() async {
     try {

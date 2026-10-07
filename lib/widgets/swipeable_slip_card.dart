@@ -61,25 +61,28 @@ class _SwipeableSlipCardState extends State<SwipeableSlipCard>
   }
 
   CornerPosition? _calculateHoverCorner(Offset offset) {
-    const double threshold = 65.0;
+    // Only classify as corner if there is clear vertical intent towards the vault corners
+    if (offset.dy.abs() < 75.0 || offset.dx.abs() < 55.0) {
+      return null;
+    }
 
-    if (offset.dx < -threshold && offset.dy < -threshold) {
+    if (offset.dx < 0 && offset.dy < 0) {
       return CornerPosition.topLeft;
-    } else if (offset.dx > threshold && offset.dy < -threshold) {
+    } else if (offset.dx > 0 && offset.dy < 0) {
       return CornerPosition.topRight;
-    } else if (offset.dx < -threshold && offset.dy > threshold) {
+    } else if (offset.dx < 0 && offset.dy > 0) {
       return CornerPosition.bottomLeft;
-    } else if (offset.dx > threshold && offset.dy > threshold) {
+    } else if (offset.dx > 0 && offset.dy > 0) {
       return CornerPosition.bottomRight;
     }
     return null;
   }
 
   int _calculateHoverLaterSide(Offset offset) {
-    // Pure sideways drag (Left or Right) - only horizontal, NOT downwards
-    if (offset.dx < -85 && offset.dy.abs() < 120) {
+    // Sideways drag (Left or Right) - natural, forgiving horizontal threshold
+    if (offset.dx < -55 && offset.dy.abs() < 140) {
       return -1; // Left side
-    } else if (offset.dx > 85 && offset.dy.abs() < 120) {
+    } else if (offset.dx > 55 && offset.dy.abs() < 140) {
       return 1; // Right side
     }
     return 0; // None
@@ -125,24 +128,33 @@ class _SwipeableSlipCardState extends State<SwipeableSlipCard>
     CornerPosition? targetCorner = _activeCorner;
     bool isLaterAction = _isHoveringLater;
 
-    // Detect velocity-based flick if not already hovered in proximity
+    // 1. Position-based skip fallback: if dragged past horizontal threshold without entering a corner
+    if (targetCorner == null && !isLaterAction) {
+      if (_dragOffset.dx < -55 && _dragOffset.dy.abs() < 140) {
+        isLaterAction = true;
+      } else if (_dragOffset.dx > 55 && _dragOffset.dy.abs() < 140) {
+        isLaterAction = true;
+      }
+    }
+
+    // 2. Velocity-based flick detection with mobile-friendly flick thresholds
     final velocity = details.velocity.pixelsPerSecond;
     final speed = velocity.distance;
 
-    if (targetCorner == null && !isLaterAction && speed > 550) {
+    if (targetCorner == null && !isLaterAction && speed > 260) {
       final vx = velocity.dx;
       final vy = velocity.dy;
 
-      // Check if flick was strongly horizontal (sideways skip)
-      if (vx.abs() > vy.abs() * 1.3 && vx.abs() > 450) {
+      // Check if flick was predominantly horizontal (sideways skip)
+      if (vx.abs() > vy.abs() && vx.abs() > 200) {
         isLaterAction = true;
-      } else if (vx < 0 && vy < 0) {
+      } else if (vx < 0 && vy < -120) {
         targetCorner = CornerPosition.topLeft;
-      } else if (vx > 0 && vy < 0) {
+      } else if (vx > 0 && vy < -120) {
         targetCorner = CornerPosition.topRight;
-      } else if (vx < 0 && vy > 0) {
+      } else if (vx < 0 && vy > 120) {
         targetCorner = CornerPosition.bottomLeft;
-      } else if (vx > 0 && vy > 0) {
+      } else if (vx > 0 && vy > 120) {
         targetCorner = CornerPosition.bottomRight;
       }
     }

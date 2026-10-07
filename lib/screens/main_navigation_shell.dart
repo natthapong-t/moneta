@@ -160,6 +160,78 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
     });
     _saveAllData();
     ExpenseStorageService.instance.resetToSample();
+    HapticFeedback.mediumImpact();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        backgroundColor: AppColors.surface,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14),
+          side: const BorderSide(color: AppColors.gold, width: 1.5),
+        ),
+        content: const Row(
+          children: [
+            Icon(Icons.restart_alt_rounded, color: AppColors.gold, size: 20),
+            SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                'รีเซ็ตสำรับสลิปตัวอย่างใหม่ (Start Fresh) เรียบร้อย!',
+                style: TextStyle(
+                  color: AppColors.textPrimary,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _onClearAllData() {
+    setState(() {
+      _pendingCards = [];
+      _categorizedCards = [];
+    });
+    _saveAllData();
+    ExpenseStorageService.instance.clearAllData();
+    HapticFeedback.mediumImpact();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        backgroundColor: AppColors.surface,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14),
+          side: const BorderSide(color: Color(0xFFEF4444), width: 1.5),
+        ),
+        content: const Row(
+          children: [
+            Icon(Icons.delete_sweep_rounded, color: Color(0xFFEF4444), size: 20),
+            SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                'ล้างข้อมูลสลิปและประวัติทั้งหมดเป็น 0 เรียบร้อย!',
+                style: TextStyle(
+                  color: AppColors.textPrimary,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _onCardSkipLater() {
+    if (_pendingCards.isEmpty) return;
+    setState(() {
+      final skipped = _pendingCards.removeAt(0);
+      _pendingCards.add(skipped);
+    });
+    _saveAllData();
   }
 
   void _onRestoreItem(ExpenseCardItem item) {
@@ -395,6 +467,8 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
                 },
                 onSelectVault: _openVaultDetails,
                 onViewSlip: (item) => _showSlipPreview(context, item),
+                onResetToSample: _onResetToSample,
+                onClearAllData: _onClearAllData,
               ),
 
               // Tab 1: Swipe Feed (โต๊ะปัดสลิป)
@@ -408,6 +482,7 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
                 onResetToSample: _onResetToSample,
                 onRestoreItem: _onRestoreItem,
                 onStartBackgroundScan: _startBackgroundGalleryScan,
+                onSkipLater: _onCardSkipLater,
               ),
 
               // Tab 2: Ledger History (บันทึกคลัง & ปฏิทินรายวัน)

@@ -22,6 +22,7 @@ class SwipeFeedScreen extends StatefulWidget {
   final VoidCallback? onResetToSample;
   final Function(ExpenseCardItem item)? onRestoreItem;
   final VoidCallback? onStartBackgroundScan;
+  final VoidCallback? onSkipLater;
 
   const SwipeFeedScreen({
     super.key,
@@ -34,6 +35,7 @@ class SwipeFeedScreen extends StatefulWidget {
     this.onResetToSample,
     this.onRestoreItem,
     this.onStartBackgroundScan,
+    this.onSkipLater,
   });
 
   @override
@@ -605,6 +607,8 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
       _laterHoverSide = 0;
       _hoveredCorner = null;
     });
+
+    widget.onSkipLater?.call();
 
     if (mounted) {
       ScaffoldMessenger.of(context).hideCurrentSnackBar();
