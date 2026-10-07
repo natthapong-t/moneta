@@ -118,18 +118,32 @@ class ExpenseStorageService {
 
   /// Monthly budget limit (Default: ฿15,000)
   Future<double> getMonthlyBudget() async {
-    final p = await prefs;
-    return p.getDouble(_keyMonthlyBudget) ?? 15000.0;
+    try {
+      final p = await prefs;
+      return p.getDouble(_keyMonthlyBudget) ?? 15000.0;
+    } catch (e) {
+      debugPrint('Error getting monthly budget: $e');
+      return 15000.0;
+    }
   }
 
   Future<void> setMonthlyBudget(double amount) async {
-    final p = await prefs;
-    await p.setDouble(_keyMonthlyBudget, amount);
+    try {
+      final p = await prefs;
+      await p.setDouble(_keyMonthlyBudget, amount);
+    } catch (e) {
+      debugPrint('Error setting monthly budget: $e');
+    }
   }
 
   /// Streaks
   Future<int> getStreakDays() async {
-    final p = await prefs;
-    return p.getInt(_keyStreakDays) ?? 7; // Default initial 7-day streak for fun
+    try {
+      final p = await prefs;
+      return p.getInt(_keyStreakDays) ?? 7; // Default initial 7-day streak for fun
+    } catch (e) {
+      debugPrint('Error getting streak days: $e');
+      return 7;
+    }
   }
 }

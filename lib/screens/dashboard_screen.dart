@@ -16,6 +16,8 @@ class DashboardScreen extends StatelessWidget {
   final VoidCallback onStartSwiping;
   final VoidCallback onScanGallery;
   final VoidCallback onQuickAdd;
+  final VoidCallback? onQuickIncome;
+  final VoidCallback? onOpenCalendar;
   final Function(ExpenseCategory) onSelectVault;
   final Function(ExpenseCardItem) onViewSlip;
 
@@ -28,6 +30,8 @@ class DashboardScreen extends StatelessWidget {
     required this.onStartSwiping,
     required this.onScanGallery,
     required this.onQuickAdd,
+    this.onQuickIncome,
+    this.onOpenCalendar,
     required this.onSelectVault,
     required this.onViewSlip,
   });
@@ -40,17 +44,8 @@ class DashboardScreen extends StatelessWidget {
     final monthFormatter = DateFormat('MMMM yyyy', 'th_TH');
 
     // Calculate totals
-    final double totalSpent = categorizedCards.fold(
-      0.0,
-      (sum, item) => sum + item.amount,
-    );
-    final double remainingBudget = (monthlyBudget - totalSpent).clamp(
-      0.0,
-      monthlyBudget,
-    );
-    final double budgetPercent = monthlyBudget > 0
-        ? (totalSpent / monthlyBudget).clamp(0.0, 1.0)
-        : 0.0;
+    double totalSpent = 0;
+    double totalIncome = 0;
 
     final Map<String, double> categoryTotals = {
       'food': 0.0,
@@ -66,12 +61,26 @@ class DashboardScreen extends StatelessWidget {
     };
 
     for (final item in categorizedCards) {
-      if (item.assignedCategory != null) {
-        final id = item.assignedCategory!.id;
-        categoryTotals[id] = (categoryTotals[id] ?? 0.0) + item.amount;
-        categoryCounts[id] = (categoryCounts[id] ?? 0) + 1;
+      if (item.isIncome) {
+        totalIncome += item.amount;
+      } else {
+        totalSpent += item.amount;
+        if (item.assignedCategory != null) {
+          final id = item.assignedCategory!.id;
+          categoryTotals[id] = (categoryTotals[id] ?? 0.0) + item.amount;
+          categoryCounts[id] = (categoryCounts[id] ?? 0) + 1;
+        }
       }
     }
+
+    final double remainingBudget = (monthlyBudget - totalSpent).clamp(
+      0.0,
+      monthlyBudget,
+    );
+    final double budgetPercent = monthlyBudget > 0
+        ? (totalSpent / monthlyBudget).clamp(0.0, 1.0)
+        : 0.0;
+    final double netBalance = totalIncome - totalSpent;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -89,25 +98,34 @@ class DashboardScreen extends StatelessWidget {
                     Row(
                       children: [
                         Container(
-                          padding: const EdgeInsets.all(10),
+                          padding: const EdgeInsets.all(5),
                           decoration: BoxDecoration(
                             color: AppColors.surface,
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(
-                              color: AppColors.gold.withValues(alpha: 0.4),
-                              width: 1.2,
+                              color: AppColors.gold.withValues(alpha: 0.5),
+                              width: 1.5,
                             ),
                             boxShadow: [
                               BoxShadow(
-                                color: AppColors.gold.withValues(alpha: 0.15),
-                                blurRadius: 12,
+                                color: AppColors.gold.withValues(alpha: 0.2),
+                                blurRadius: 8,
                               ),
                             ],
                           ),
-                          child: const Icon(
-                            Icons.account_balance_rounded,
-                            color: AppColors.gold,
-                            size: 22,
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: Image.asset(
+                              'assets/images/app_logo.png',
+                              width: 30,
+                              height: 30,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) => const Icon(
+                                Icons.savings_rounded,
+                                color: AppColors.gold,
+                                size: 24,
+                              ),
+                            ),
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -197,7 +215,38 @@ class DashboardScreen extends StatelessWidget {
                           letterSpacing: -0.5,
                         ),
                       ),
-                      const SizedBox(height: 12),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              const Text('รายรับ ', style: TextStyle(fontSize: 11.5, color: AppColors.textSecondary)),
+                              Text(
+                                '+฿${shortFormatter.format(totalIncome)}',
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w900,
+                                  color: AppColors.emerald,
+                                ),
+                              ),
+                            ],
+                          ),
+                          Row(
+                            children: [
+                              const Text('สุทธิ ', style: TextStyle(fontSize: 11.5, color: AppColors.textSecondary)),
+                              Text(
+                                '฿${shortFormatter.format(netBalance)}',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w900,
+                                  color: netBalance >= 0 ? AppColors.gold : AppColors.vaultTributum,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
                       ArcadeProgressBar(value: budgetPercent, height: 9),
                       const SizedBox(height: 10),
                       Row(
@@ -211,7 +260,7 @@ class DashboardScreen extends StatelessWidget {
                             ),
                           ),
                           Text(
-                            'คงเหลือ ฿ ${currencyFormatter.format(remainingBudget)}',
+                            'เหลืองบ ฿ ${currencyFormatter.format(remainingBudget)}',
                             style: const TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.bold,
@@ -352,14 +401,14 @@ class DashboardScreen extends StatelessWidget {
                           children: const [
                             Icon(
                               Icons.document_scanner_rounded,
-                              size: 18,
+                              size: 16,
                               color: AppColors.vaultQuadriga,
                             ),
-                            SizedBox(width: 6),
+                            SizedBox(width: 4),
                             Text(
                               'กวาดสลิป',
                               style: TextStyle(
-                                fontSize: 13,
+                                fontSize: 12,
                                 fontWeight: FontWeight.bold,
                                 color: AppColors.textPrimary,
                               ),
@@ -368,7 +417,36 @@ class DashboardScreen extends StatelessWidget {
                         ),
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    if (onQuickIncome != null) ...[
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: ArcadeButton(
+                          onPressed: onQuickIncome,
+                          color: AppColors.emerald,
+                          shadowColor: AppColors.emeraldShadow,
+                          borderColor: AppColors.emeraldShadow,
+                          depth: 3.5,
+                          borderRadius: BorderRadius.circular(14),
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: const [
+                              Text('🪙', style: TextStyle(fontSize: 14)),
+                              SizedBox(width: 4),
+                              Text(
+                                '+ รับเงิน',
+                                style: TextStyle(
+                                  fontSize: 12.5,
+                                  fontWeight: FontWeight.w900,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                    const SizedBox(width: 8),
                     Expanded(
                       child: ArcadeButton(
                         onPressed: onQuickAdd,
@@ -382,15 +460,15 @@ class DashboardScreen extends StatelessWidget {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: const [
                             Icon(
-                              Icons.flash_on_rounded,
-                              size: 18,
-                              color: AppColors.goldShadow,
+                              Icons.add_rounded,
+                              size: 16,
+                              color: AppColors.vaultTaverna,
                             ),
-                            SizedBox(width: 6),
+                            SizedBox(width: 4),
                             Text(
-                              'บันทึกด่วน',
+                              '+ จ่ายเงิน',
                               style: TextStyle(
-                                fontSize: 13,
+                                fontSize: 12,
                                 fontWeight: FontWeight.bold,
                                 color: AppColors.textPrimary,
                               ),

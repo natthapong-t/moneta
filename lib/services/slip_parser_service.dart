@@ -208,6 +208,7 @@ class SlipParserService {
               scanner: barcodeScanner,
               recognizer: textRecognizer,
               sourceAlbum: album.name,
+              assetDateTime: asset.createDateTime,
             );
 
             if (item != null) {
@@ -285,6 +286,7 @@ class SlipParserService {
             scanner: barcodeScanner,
             recognizer: textRecognizer,
             sourceAlbum: 'คลังภาพทั่วไป',
+            assetDateTime: asset.createDateTime,
           );
 
           if (item != null) {
@@ -495,6 +497,7 @@ class SlipParserService {
     BarcodeScanner? scanner,
     TextRecognizer? recognizer,
     String? sourceAlbum,
+    DateTime? assetDateTime,
   }) async {
     final file = File(path);
     if (!await file.exists()) return null;
@@ -673,7 +676,7 @@ class SlipParserService {
             ? receiver
             : (note ?? 'รายการโอนเงิน ($bankName)'),
         amount: finalAmount > 0 ? finalAmount : 100.0, // fallback if QR verified
-        dateTime: DateTime.now(),
+        dateTime: assetDateTime ?? DateTime.now(),
         bankName: bankName,
         bankColor: bankColor,
         referenceNo: finalRef,

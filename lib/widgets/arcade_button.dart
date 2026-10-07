@@ -3,7 +3,10 @@ import 'package:flutter/services.dart';
 
 /// Tactile 3D push button with Duolingo / Arcade mechanical compression on tap
 class ArcadeButton extends StatefulWidget {
-  final Widget child;
+  final Widget? child;
+  final String? label;
+  final IconData? icon;
+  final Color? textColor;
   final VoidCallback? onPressed;
   final Color color;
   final Color shadowColor;
@@ -17,9 +20,13 @@ class ArcadeButton extends StatefulWidget {
 
   const ArcadeButton({
     super.key,
-    required this.child,
+    this.child,
+    this.label,
+    this.icon,
+    this.textColor,
+    Color? backgroundColor,
     this.onPressed,
-    this.color = Colors.white,
+    Color? color,
     this.shadowColor = const Color(0xFFCBD5E1),
     this.borderColor,
     this.borderWidth = 2.0,
@@ -28,7 +35,8 @@ class ArcadeButton extends StatefulWidget {
     this.padding,
     this.width,
     this.height,
-  });
+  })  : color = backgroundColor ?? color ?? Colors.white,
+        assert(child != null || label != null, 'Either child or label must be provided');
 
   @override
   State<ArcadeButton> createState() => _ArcadeButtonState();
@@ -91,7 +99,30 @@ class _ArcadeButtonState extends State<ArcadeButton> {
           child: Center(
             widthFactor: widget.width == null ? 1.0 : null,
             heightFactor: widget.height == null ? 1.0 : null,
-            child: widget.child,
+            child: widget.child ??
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    if (widget.icon != null) ...[
+                      Icon(
+                        widget.icon,
+                        size: 18,
+                        color: widget.textColor ?? Colors.black87,
+                      ),
+                      const SizedBox(width: 6),
+                    ],
+                    if (widget.label != null)
+                      Text(
+                        widget.label!,
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w800,
+                          color: widget.textColor ?? Colors.black87,
+                        ),
+                      ),
+                  ],
+                ),
           ),
         ),
       ),

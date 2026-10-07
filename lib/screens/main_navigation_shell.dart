@@ -7,6 +7,7 @@ import '../models/expense_card_item.dart';
 import '../services/expense_storage_service.dart';
 import '../services/slip_parser_service.dart';
 import '../widgets/quick_add_sheet.dart';
+import '../widgets/quick_income_sheet.dart';
 import '../widgets/vault_details_sheet.dart';
 import 'analytics_screen.dart';
 import 'dashboard_screen.dart';
@@ -48,20 +49,37 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
   }
 
   Future<void> _loadInitialData() async {
-    final storage = ExpenseStorageService.instance;
-    final pending = await storage.loadPendingExpenses();
-    final categorized = await storage.loadCategorizedExpenses();
-    final budget = await storage.getMonthlyBudget();
-    final streak = await storage.getStreakDays();
+    try {
+      final storage = ExpenseStorageService.instance;
+      final pending = await storage.loadPendingExpenses();
+      final categorized = await storage.loadCategorizedExpenses();
+      final budget = await storage.getMonthlyBudget();
+      final streak = await storage.getStreakDays();
 
-    if (mounted) {
-      setState(() {
-        _pendingCards = pending;
-        _categorizedCards = categorized;
-        _monthlyBudget = budget;
-        _streakDays = streak;
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _pendingCards = pending;
+          _categorizedCards = categorized;
+          _monthlyBudget = budget;
+          _streakDays = streak;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading initial data: $e');
+      if (mounted) {
+        setState(() {
+          _pendingCards = List.from(ExpenseCardItem.sampleCards);
+          _categorizedCards = [];
+          _monthlyBudget = 15000.0;
+          _streakDays = 7;
+        });
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -282,6 +300,45 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
     );
   }
 
+  void _openQuickIncomeSheet([DateTime? date]) {
+    QuickIncomeSheet.show(
+      context: context,
+      initialDate: date,
+      onIncomeCreated: (item) {
+        setState(() {
+          _categorizedCards.add(item);
+        });
+        _saveAllData();
+        HapticFeedback.mediumImpact();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: AppColors.surface,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+              side: const BorderSide(color: AppColors.emerald, width: 2),
+            ),
+            content: Row(
+              children: [
+                const Text('🪙', style: TextStyle(fontSize: 18)),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'หยอดเหรียญรายรับ +฿${item.amount.toStringAsFixed(2)} เรียบร้อย!',
+                    style: const TextStyle(
+                      color: AppColors.textPrimary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   void _openVaultDetails(ExpenseCategory cat) {
     HapticFeedback.lightImpact();
     final itemsInVault = _categorizedCards
@@ -331,6 +388,11 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
                 },
                 onScanGallery: _startBackgroundGalleryScan,
                 onQuickAdd: _openQuickAddSheet,
+                onQuickIncome: _openQuickIncomeSheet,
+                onOpenCalendar: () {
+                  HapticFeedback.selectionClick();
+                  setState(() => _currentIndex = 2);
+                },
                 onSelectVault: _openVaultDetails,
                 onViewSlip: (item) => _showSlipPreview(context, item),
               ),
@@ -348,10 +410,17 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
                 onStartBackgroundScan: _startBackgroundGalleryScan,
               ),
 
-              // Tab 2: Ledger History (บันทึกคลัง)
+              // Tab 2: Ledger History (บันทึกคลัง & ปฏิทินรายวัน)
               LedgerHistoryScreen(
                 transactions: _categorizedCards,
+                pendingCards: _pendingCards,
                 onDeleteTransaction: _onDeleteTransaction,
+                onAddIncome: _openQuickIncomeSheet,
+                onAddExpense: _openQuickAddSheet,
+                onStartSwiping: () {
+                  HapticFeedback.selectionClick();
+                  setState(() => _currentIndex = 1);
+                },
               ),
 
               // Tab 3: Analytics (สถิติ & งบประมาณ)

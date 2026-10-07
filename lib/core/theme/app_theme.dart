@@ -41,6 +41,13 @@ class AppColors {
   static const Color tyrianPurple = Color(0xFF9333EA);
   static const Color waxSealRed = Color(0xFFFF4B4B);
 
+  // Financial Indicators (Income vs Expense)
+  static const Color emerald = Color(0xFF10B981);          // Fresh Income Green
+  static const Color emeraldShadow = Color(0xFF059669);    // Income 3D Shadow
+  static const Color emeraldBg = Color(0xFFECFDF5);        // Income Light Tint
+  static const Color expenseRed = Color(0xFFFF4B4B);       // Expense Red
+  static const Color expenseRedShadow = Color(0xFFD32F2F);
+
   // High-Contrast Cartoon Typography
   static const Color marbleWhite = Color(0xFF1E293B);      // Dark Charcoal / Slate for bold headings
   static const Color textPrimary = Color(0xFF1E293B);      // Dark slate

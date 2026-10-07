@@ -11,6 +11,7 @@ class ExpenseCardItem {
   final String referenceNo;
   final String? note;
   final String? imagePath;
+  final bool isIncome;
   ExpenseCategory? assignedCategory;
 
   ExpenseCardItem({
@@ -23,12 +24,14 @@ class ExpenseCardItem {
     required this.referenceNo,
     this.note,
     this.imagePath,
+    this.isIncome = false,
     this.assignedCategory,
   });
 
   ExpenseCardItem copyWith({
     ExpenseCategory? assignedCategory,
     String? imagePath,
+    bool? isIncome,
   }) {
     return ExpenseCardItem(
       id: id,
@@ -40,6 +43,7 @@ class ExpenseCardItem {
       referenceNo: referenceNo,
       note: note,
       imagePath: imagePath ?? this.imagePath,
+      isIncome: isIncome ?? this.isIncome,
       assignedCategory: assignedCategory ?? this.assignedCategory,
     );
   }
@@ -68,6 +72,7 @@ class ExpenseCardItem {
     'referenceNo': referenceNo,
     'note': note,
     'imagePath': imagePath,
+    'isIncome': isIncome,
     'assignedCategoryId': assignedCategory?.id,
   };
 
@@ -98,70 +103,74 @@ class ExpenseCardItem {
       referenceNo: json['referenceNo'] as String? ?? '',
       note: json['note'] as String?,
       imagePath: json['imagePath'] as String?,
+      isIncome: json['isIncome'] as bool? ?? false,
       assignedCategory: category,
     );
   }
 
-  static List<ExpenseCardItem> get sampleCards => [
-    ExpenseCardItem(
-      id: 'slip-001',
-      receiverName: 'ก๋วยเตี๋ยวเรืออยุธยา ป้าสมศรี',
-      amount: 65.00,
-      dateTime: DateTime.now().subtract(const Duration(minutes: 15)),
-      bankName: 'K PLUS',
-      bankColor: const Color(0xFF138F46),
-      referenceNo: '2026100578912445',
-      note: 'มื้อกลางวัน พิเศษ 2 ชาม',
-    ),
-    ExpenseCardItem(
-      id: 'slip-002',
-      receiverName: 'บมจ. ระบบขนส่งมวลชนกรุงเทพ (BTS)',
-      amount: 47.00,
-      dateTime: DateTime.now().subtract(const Duration(hours: 1, minutes: 20)),
-      bankName: 'SCB EASY',
-      bankColor: const Color(0xFF4E2A84),
-      referenceNo: '2026100566319802',
-      note: 'เดินทางไปประชุม',
-    ),
-    ExpenseCardItem(
-      id: 'slip-003',
-      receiverName: 'Uniqlo สาขาเซ็นทรัลลาดพร้าว',
-      amount: 990.00,
-      dateTime: DateTime.now().subtract(const Duration(hours: 3)),
-      bankName: 'K-Bank',
-      bankColor: const Color(0xFF138F46),
-      referenceNo: '2026100511223344',
-      note: 'เสื้อเชิ้ตทำงาน AIRism',
-    ),
-    ExpenseCardItem(
-      id: 'slip-004',
-      receiverName: 'การไฟฟ้านครหลวง (MEA)',
-      amount: 1450.50,
-      dateTime: DateTime.now().subtract(const Duration(hours: 5)),
-      bankName: 'PromptPay',
-      bankColor: const Color(0xFF003D79),
-      referenceNo: '2026100599887766',
-      note: 'ค่าไฟฟ้าประจำเดือน กันยายน',
-    ),
-    ExpenseCardItem(
-      id: 'slip-005',
-      receiverName: 'GrabFood Thailand',
-      amount: 235.00,
-      dateTime: DateTime.now().subtract(const Duration(hours: 7)),
-      bankName: 'TrueMoney',
-      bankColor: const Color(0xFFFA5A00),
-      referenceNo: '2026100544556677',
-      note: 'ข้าวหน้าหมูทอดทงคัตสึ',
-    ),
-    ExpenseCardItem(
-      id: 'slip-006',
-      receiverName: 'PTT Station สาขาวิภาวดี',
-      amount: 800.00,
-      dateTime: DateTime.now().subtract(const Duration(days: 1)),
-      bankName: 'Krungthai NEXT',
-      bankColor: const Color(0xFF00A3E0),
-      referenceNo: '2026100412345678',
-      note: 'เติมน้ำมัน Gasohol 95',
-    ),
-  ];
+  static List<ExpenseCardItem> get sampleCards {
+    final now = DateTime.now();
+    return [
+      ExpenseCardItem(
+        id: 'slip-001',
+        receiverName: 'ก๋วยเตี๋ยวเรืออยุธยา ป้าสมศรี',
+        amount: 65.00,
+        dateTime: now.subtract(const Duration(minutes: 15)),
+        bankName: 'K PLUS',
+        bankColor: const Color(0xFF138F46),
+        referenceNo: '2026100578912445',
+        note: 'มื้อกลางวัน ข้าวเที่ยง',
+      ),
+      ExpenseCardItem(
+        id: 'slip-002',
+        receiverName: 'บมจ. ระบบขนส่งมวลชนกรุงเทพ (BTS)',
+        amount: 47.00,
+        dateTime: now.subtract(const Duration(hours: 1, minutes: 20)),
+        bankName: 'SCB EASY',
+        bankColor: const Color(0xFF4E2A84),
+        referenceNo: '2026100566319802',
+        note: 'เดินทางไปทำงาน',
+      ),
+      ExpenseCardItem(
+        id: 'slip-003',
+        receiverName: 'Uniqlo สาขาเซ็นทรัลลาดพร้าว',
+        amount: 990.00,
+        dateTime: now.subtract(const Duration(days: 1, hours: 2)),
+        bankName: 'K-Bank',
+        bankColor: const Color(0xFF138F46),
+        referenceNo: '2026100511223344',
+        note: 'เสื้อเชิ้ตทำงาน AIRism',
+      ),
+      ExpenseCardItem(
+        id: 'slip-004',
+        receiverName: 'การไฟฟ้านครหลวง (MEA)',
+        amount: 1450.50,
+        dateTime: now.subtract(const Duration(days: 2)),
+        bankName: 'PromptPay',
+        bankColor: const Color(0xFF003D79),
+        referenceNo: '2026100599887766',
+        note: 'ค่าไฟฟ้าประจำเดือน',
+      ),
+      ExpenseCardItem(
+        id: 'slip-005',
+        receiverName: 'GrabFood Thailand',
+        amount: 235.00,
+        dateTime: now.subtract(const Duration(days: 2, hours: 4)),
+        bankName: 'TrueMoney',
+        bankColor: const Color(0xFFFA5A00),
+        referenceNo: '2026100544556677',
+        note: 'ข้าวเย็น หมูทอดทงคัตสึ',
+      ),
+      ExpenseCardItem(
+        id: 'slip-006',
+        receiverName: 'PTT Station สาขาวิภาวดี',
+        amount: 800.00,
+        dateTime: now.subtract(const Duration(days: 3)),
+        bankName: 'Krungthai NEXT',
+        bankColor: const Color(0xFF00A3E0),
+        referenceNo: '2026100412345678',
+        note: 'เติมน้ำมัน Gasohol 95',
+      ),
+    ];
+  }
 }

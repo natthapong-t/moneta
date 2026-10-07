@@ -20,7 +20,8 @@ class ArcadeCard extends StatelessWidget {
   const ArcadeCard({
     super.key,
     required this.child,
-    this.color = AppColors.surface,
+    Color? backgroundColor,
+    Color? color,
     this.borderColor,
     this.borderWidth = 1.8,
     this.shadowColor = AppColors.shadowDefault,
@@ -30,7 +31,7 @@ class ArcadeCard extends StatelessWidget {
     this.onTap,
     this.width,
     this.height,
-  });
+  }) : color = backgroundColor ?? color ?? AppColors.surface;
 
   @override
   Widget build(BuildContext context) {
