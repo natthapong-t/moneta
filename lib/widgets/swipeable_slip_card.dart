@@ -12,12 +12,17 @@ class SwipeableSlipCard extends StatefulWidget {
   final Function(CornerPosition corner) onCategorized;
   final Function(CornerPosition? corner) onProximityChanged;
 
+  final VoidCallback? onSkipLater;
+  final Function(int side)? onLaterSideChanged; // -1 = left, 1 = right, 0 = none
+
   const SwipeableSlipCard({
     super.key,
     required this.item,
     required this.isTopCard,
     required this.onCategorized,
     required this.onProximityChanged,
+    this.onSkipLater,
+    this.onLaterSideChanged,
   });
 
   @override
@@ -28,6 +33,8 @@ class _SwipeableSlipCardState extends State<SwipeableSlipCard>
     with SingleTickerProviderStateMixin {
   Offset _dragOffset = Offset.zero;
   CornerPosition? _activeCorner;
+  bool _isHoveringLater = false;
+  int _laterSide = 0;
 
   late AnimationController _springController;
   late Animation<Offset> _springAnimation;
@@ -68,6 +75,16 @@ class _SwipeableSlipCardState extends State<SwipeableSlipCard>
     return null;
   }
 
+  int _calculateHoverLaterSide(Offset offset) {
+    // Pure sideways drag (Left or Right) - only horizontal, NOT downwards
+    if (offset.dx < -85 && offset.dy.abs() < 120) {
+      return -1; // Left side
+    } else if (offset.dx > 85 && offset.dy.abs() < 120) {
+      return 1; // Right side
+    }
+    return 0; // None
+  }
+
   void _onPanStart(DragStartDetails details) {
     if (!widget.isTopCard) return;
     _springController.stop();
@@ -81,6 +98,9 @@ class _SwipeableSlipCardState extends State<SwipeableSlipCard>
     });
 
     final newCorner = _calculateHoverCorner(_dragOffset);
+    final newLaterSide =
+        newCorner == null ? _calculateHoverLaterSide(_dragOffset) : 0;
+
     if (newCorner != _activeCorner) {
       if (newCorner != null) {
         HapticFeedback.selectionClick();
@@ -88,22 +108,35 @@ class _SwipeableSlipCardState extends State<SwipeableSlipCard>
       _activeCorner = newCorner;
       widget.onProximityChanged(_activeCorner);
     }
+
+    if (newLaterSide != _laterSide) {
+      if (newLaterSide != 0) {
+        HapticFeedback.selectionClick();
+      }
+      _laterSide = newLaterSide;
+      _isHoveringLater = newLaterSide != 0;
+      widget.onLaterSideChanged?.call(_laterSide);
+    }
   }
 
   void _onPanEnd(DragEndDetails details) {
     if (!widget.isTopCard) return;
 
     CornerPosition? targetCorner = _activeCorner;
+    bool isLaterAction = _isHoveringLater;
 
     // Detect velocity-based flick if not already hovered in proximity
     final velocity = details.velocity.pixelsPerSecond;
     final speed = velocity.distance;
 
-    if (targetCorner == null && speed > 550) {
+    if (targetCorner == null && !isLaterAction && speed > 550) {
       final vx = velocity.dx;
       final vy = velocity.dy;
 
-      if (vx < 0 && vy < 0) {
+      // Check if flick was strongly horizontal (sideways skip)
+      if (vx.abs() > vy.abs() * 1.3 && vx.abs() > 450) {
+        isLaterAction = true;
+      } else if (vx < 0 && vy < 0) {
         targetCorner = CornerPosition.topLeft;
       } else if (vx > 0 && vy < 0) {
         targetCorner = CornerPosition.topRight;
@@ -115,6 +148,9 @@ class _SwipeableSlipCardState extends State<SwipeableSlipCard>
     }
 
     if (targetCorner != null) {
+      widget.onLaterSideChanged?.call(0);
+      _laterSide = 0;
+      _isHoveringLater = false;
       HapticFeedback.mediumImpact();
       widget.onProximityChanged(targetCorner);
 
@@ -142,8 +178,39 @@ class _SwipeableSlipCardState extends State<SwipeableSlipCard>
         widget.onProximityChanged(null);
         widget.onCategorized(targetCorner!);
       });
+    } else if (isLaterAction) {
+      HapticFeedback.mediumImpact();
+      widget.onLaterSideChanged?.call(0);
+      widget.onProximityChanged(null);
+      setState(() {
+        _isHoveringLater = false;
+        _laterSide = 0;
+      });
+
+      // Fly horizontally off-screen in the drag/flick direction
+      final double endX = _dragOffset.dx >= 0 ? 650.0 : -650.0;
+      final endOffset = Offset(endX, _dragOffset.dy);
+
+      _springAnimation = Tween<Offset>(begin: _dragOffset, end: endOffset)
+          .animate(
+            CurvedAnimation(
+              parent: _springController,
+              curve: Curves.easeInCubic,
+            ),
+          );
+
+      _springController.duration = const Duration(milliseconds: 180);
+      _springController.forward(from: 0.0).then((_) {
+        widget.onSkipLater?.call();
+      });
     } else {
       widget.onProximityChanged(null);
+      widget.onLaterSideChanged?.call(0);
+      setState(() {
+        _isHoveringLater = false;
+        _laterSide = 0;
+      });
+
       _springAnimation = Tween<Offset>(begin: _dragOffset, end: Offset.zero)
           .animate(
             CurvedAnimation(
@@ -438,7 +505,87 @@ class _SwipeableSlipCardState extends State<SwipeableSlipCard>
                   ),
                 ),
               ),
+            if (_isHoveringLater && activeCat == null)
+              _buildLaterOverlay(),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLaterOverlay() {
+    return Positioned.fill(
+      child: Container(
+        decoration: BoxDecoration(
+          color: const Color(0xFFFEF3C7).withValues(alpha: 0.92),
+          borderRadius: BorderRadius.circular(19),
+          border: Border.all(
+            color: const Color(0xFFD97706),
+            width: 3.0,
+          ),
+        ),
+        child: Center(
+          child: Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 10,
+            ),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(
+                color: const Color(0xFFD97706),
+                width: 2.2,
+              ),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0xFFB45309),
+                  offset: Offset(0, 4),
+                  blurRadius: 0,
+                ),
+              ],
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFF59E0B),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.schedule_rounded,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: const [
+                    Text(
+                      'พักไว้จัดการทีหลัง',
+                      style: TextStyle(
+                        color: Color(0xFF92400E),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    Text(
+                      'SKIP • ข้ามไปท้ายคิว',
+                      style: TextStyle(
+                        color: Color(0xFFB45309),
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -828,6 +975,8 @@ class _SwipeableSlipCardState extends State<SwipeableSlipCard>
                 ),
               ),
             ),
+          if (_isHoveringLater && activeCat == null)
+            _buildLaterOverlay(),
         ],
       ),
     );

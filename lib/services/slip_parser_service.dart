@@ -51,7 +51,7 @@ class SlipParserService {
   static const List<String> thaiFinancialAlbumKeywords = [
     // Banking Apps
     'k plus', 'kplus', 'kbank', 'make by kbank', 'make',
-    'scb easy', 'scbeasy', 'scb', 'innovestx',
+    'scb easy', 'scbeasy', 'scb',
     'krungthai next', 'krungthai', 'next', 'paotang', 'เป๋าตัง',
     'bangkok bank', 'bualuang', 'bbl',
     'ttb touch', 'ttb', 'tmb touch', 'tmb',
@@ -59,36 +59,60 @@ class SlipParserService {
     'mymo', 'gsb', 'ออมสิน',
     'baac mobile', 'baac', 'ธกส', 'ธ.ก.ส.',
     'ghb all', 'ghb', 'ธอส', 'ธ.อ.ส.',
-    'dime!', 'dime', 'kkp mobile', 'kkp',
+    'kkp mobile', 'kkp',
     'tisco', 'lh bank', 'lhb', 'lhb you',
     'cimb', 'uob tmrw', 'tmrw', 'uob',
-    // Wallets & Delivery / Fintech
+    // Authorized Wallets & Transit Auto-Debit
     'truemoney', 'true money', 'true wallet',
     'shopeepay', 'shopee pay', 'airpay',
     'rabbit', 'rabbit line pay', 'line pay',
-    'line man', 'lineman', 'grab', 'robinhood',
     // Generic slip folder names
     'slip', 'slips', 'สลิป', 'receipt', 'ใบเสร็จ', 'transfer', 'โอนเงิน',
   ];
+
+  /// Albums, folders, and path keywords explicitly EXCLUDED from scanning:
+  /// 1. Screenshots (banks block screenshots anyway; avoids noisy non-slip images and saves CPU)
+  /// 2. Stock / Investment platforms (e.g. Dime, InnovestX, Streaming)
+  /// 3. Food delivery / Ride apps (user settles through bank app anyway; prevents bogus OCR matches)
+  static const List<String> excludedAlbumKeywords = [
+    // Screenshots
+    'screenshot', 'screenshots', 'screen_shot', 'screen-shot',
+    'screen capture', 'screencapture', 'screencap',
+    'ภาพหน้าจอ', 'จับภาพหน้าจอ', 'แคปหน้าจอ', 'สกรีนช็อต',
+    // Stock / Investments
+    'dime', 'dime!', 'innovestx', 'streaming', 'settrade', 'invest',
+    // Food delivery / rides
+    'line man', 'lineman', 'grab', 'robinhood', 'foodpanda', 'shopeefood',
+  ];
+
+  /// Tests whether a path or album name should be strictly excluded
+  static bool isExcludedAlbumOrPath(String nameOrPath) {
+    final clean = nameOrPath.trim().toLowerCase();
+    if (clean.isEmpty) return false;
+    for (final kw in excludedAlbumKeywords) {
+      if (clean.contains(kw)) return true;
+    }
+    return false;
+  }
 
   /// Tests whether an album name corresponds to a financial, banking, or slip folder
   static bool isFinancialAlbum(String albumName) {
     final clean = albumName.trim().toLowerCase();
     if (clean.isEmpty) return false;
+    if (isExcludedAlbumOrPath(clean)) return false;
 
     // Direct exact names & short abbreviations
     const exactNames = {
       'make', 'make by kbank', 'next', 'krungthai next',
       'k plus', 'kplus', 'kbank', 'scb', 'scb easy', 'scbeasy',
-      'baac', 'baac mobile', 'dime', 'dime!', 'kept', 'mymo',
+      'baac', 'baac mobile', 'kept', 'mymo',
       'bbl', 'bangkok bank', 'ttb', 'ttb touch', 'tmb', 'tmb touch',
       'kma', 'uchoose', 'krungsri', 'gsb', 'ghb', 'ghb all', 'ghb all gen',
       'kkp', 'kkp mobile', 'tisco', 'lh bank', 'lhb', 'lhb you',
-      'cimb', 'uob', 'tmrw', 'uob tmrw', 'innovestx',
+      'cimb', 'uob', 'tmrw', 'uob tmrw',
       'truemoney', 'true money', 'truemoney wallet',
       'shopeepay', 'shopee pay', 'airpay',
-      'rabbit', 'rabbit line pay', 'line pay', 'line man', 'lineman',
-      'grab', 'robinhood',
+      'rabbit', 'rabbit line pay', 'line pay',
       'slip', 'slips', 'bank', 'banking',
       'สลิป', 'สลิปโอนเงิน', 'ใบเสร็จ', 'โอนเงิน', 'เป๋าตัง', 'ออมสิน', 'ธกส', 'ธอส',
     };
@@ -198,6 +222,11 @@ class SlipParserService {
             final file = await asset.file;
             if (file == null || !await file.exists()) continue;
 
+            // Fast-skip screenshots, stock apps, and food delivery folders to save CPU
+            if (isExcludedAlbumOrPath(file.path)) {
+              continue;
+            }
+
             if (processedPaths.contains(file.path)) {
               continue;
             }
@@ -276,6 +305,11 @@ class SlipParserService {
           final file = await asset.file;
           if (file == null || !await file.exists()) continue;
 
+          // Fast-skip screenshots, stock apps, and food delivery folders in general gallery
+          if (isExcludedAlbumOrPath(file.path)) {
+            continue;
+          }
+
           if (processedPaths.contains(file.path)) {
             continue;
           }
@@ -340,7 +374,7 @@ class SlipParserService {
       if (allAlbums.isEmpty) return [];
 
       final List<AssetPathEntity> priorityAlbums = allAlbums
-          .where((a) => !a.isAll && isFinancialAlbum(a.name))
+          .where((a) => !a.isAll && isFinancialAlbum(a.name) && !isExcludedAlbumOrPath(a.name))
           .toList();
 
       final AssetPathEntity generalAlbum = allAlbums.firstWhere(
@@ -365,7 +399,10 @@ class SlipParserService {
           if (asset.width > asset.height * 1.25) continue;
 
           final file = await asset.file;
-          if (file != null && await file.exists() && seenPaths.add(file.path)) {
+          if (file != null &&
+              await file.exists() &&
+              !isExcludedAlbumOrPath(file.path) &&
+              seenPaths.add(file.path)) {
             paths.add(file.path);
             if (limit != null && paths.length >= limit) return paths;
           }
@@ -388,7 +425,10 @@ class SlipParserService {
         if (asset.width > asset.height * 1.25) continue;
 
         final file = await asset.file;
-        if (file != null && await file.exists() && seenPaths.add(file.path)) {
+        if (file != null &&
+            await file.exists() &&
+            !isExcludedAlbumOrPath(file.path) &&
+            seenPaths.add(file.path)) {
           paths.add(file.path);
           if (limit != null && paths.length >= limit) return paths;
         }
@@ -502,6 +542,12 @@ class SlipParserService {
     final file = File(path);
     if (!await file.exists()) return null;
 
+    // Fast-skip screenshots, stock apps (Dime), and food delivery paths
+    if (isExcludedAlbumOrPath(path) ||
+        (sourceAlbum != null && isExcludedAlbumOrPath(sourceAlbum))) {
+      return null;
+    }
+
     final bool ownsScanner = scanner == null;
     final bool ownsRecognizer = recognizer == null;
 
@@ -576,15 +622,9 @@ class SlipParserService {
       } else if (fullText.contains('BAAC') || fullText.contains('ธ.ก.ส.')) {
         bankName = 'BAAC (ธ.ก.ส.)';
         bankColor = const Color(0xFF006633);
-      } else if (fullLower.contains('dime') || fullText.contains('ไดม์')) {
-        bankName = 'Dime! (เกียรตินาคินภัทร)';
-        bankColor = const Color(0xFF00C37B);
       } else if (fullLower.contains('rabbit') || fullText.contains('แรบบิท')) {
         bankName = 'Rabbit LINE Pay';
         bankColor = const Color(0xFF00B900);
-      } else if (fullLower.contains('line man') || fullLower.contains('lineman')) {
-        bankName = 'LINE MAN';
-        bankColor = const Color(0xFF00B14F);
       } else if (fullLower.contains('ttb') || fullText.contains('ทีทีบี')) {
         bankName = 'ttb touch (ทีทีบี)';
         bankColor = const Color(0xFF002D62);
@@ -605,15 +645,9 @@ class SlipParserService {
       // If bank name is still generic, infer from sourceAlbum if available
       if (bankName == 'สลิปธนาคาร' && sourceAlbum != null) {
         final albumLower = sourceAlbum.toLowerCase();
-        if (albumLower.contains('dime')) {
-          bankName = 'Dime! (เกียรตินาคินภัทร)';
-          bankColor = const Color(0xFF00C37B);
-        } else if (albumLower.contains('rabbit')) {
+        if (albumLower.contains('rabbit')) {
           bankName = 'Rabbit';
           bankColor = const Color(0xFF00B900);
-        } else if (albumLower.contains('line man')) {
-          bankName = 'LINE MAN';
-          bankColor = const Color(0xFF00B14F);
         } else if (albumLower.contains('make')) {
           bankName = 'MAKE by KBank';
           bankColor = const Color(0xFF00A9E0);
@@ -644,22 +678,47 @@ class SlipParserService {
         }
       }
 
-      // Final Slip Validation:
-      // Must either have genuine PromptPay Slip Mini-QR OR have clear amount + bank signature
-      // OR come from a recognized financial banking album with an identified amount!
+      // Strict Bank & Auto-Debit Slip Qualification Gate
+      final bool isQrVerified = isPromptPaySlipQR;
+
       final bool isKnownFinancialSource = sourceAlbum != null &&
           isFinancialAlbum(sourceAlbum) &&
-          sourceAlbum != 'คลังภาพทั่วไป';
+          sourceAlbum != 'คลังภาพทั่วไป' &&
+          !isExcludedAlbumOrPath(sourceAlbum);
 
-      final bool hasBankSignature = fullText.contains('Transfer') ||
-          fullText.contains('Successful') ||
-          fullText.contains('PromptPay') ||
-          fullText.contains('Ref') ||
-          fullText.contains('โอนเงิน') ||
-          fullText.contains('จ่ายเงิน');
+      final bool hasIdentifiedBankBrand = bankName != 'สลิปธนาคาร';
 
-      if (!isPromptPaySlipQR && !hasBankSignature && !isKnownFinancialSource) {
-        return null; // Not a bank slip, filter out!
+      final bool hasTransferKeywords = fullText.contains('โอนเงินสำเร็จ') ||
+          fullText.contains('โอนสำเร็จ') ||
+          fullText.contains('ทำรายการสำเร็จ') ||
+          fullText.contains('สแกนจ่ายสำเร็จ') ||
+          fullText.contains('ชำระเงินสำเร็จ') ||
+          fullText.contains('หักบัญชีสำเร็จ') ||
+          fullText.contains('บันทึกช่วยจำ') ||
+          fullText.contains('รหัสอ้างอิง') ||
+          fullText.contains('เลขที่รายการ') ||
+          fullText.contains('Transfer Successful') ||
+          fullText.contains('Transaction Successful') ||
+          fullText.contains('Payment Successful') ||
+          (fullText.contains('PromptPay') &&
+              (fullText.contains('โอนเงิน') || fullText.contains('Transfer')));
+
+      final bool isAuthorizedWallet = (bankName == 'TrueMoney Wallet' ||
+              bankName == 'Rabbit LINE Pay' ||
+              bankName == 'Rabbit' ||
+              bankName == 'ShopeePay') &&
+          (fullText.contains('สำเร็จ') ||
+              fullText.contains('Successful') ||
+              fullText.contains('รายการ') ||
+              fullText.contains('ชำระเงิน'));
+
+      final bool isValidSlip = isQrVerified ||
+          (isKnownFinancialSource && (hasTransferKeywords || (amount != null && amount > 0))) ||
+          (hasIdentifiedBankBrand && hasTransferKeywords && (amount != null && amount > 0)) ||
+          isAuthorizedWallet;
+
+      if (!isValidSlip) {
+        return null; // Reject immediately! Not a verified bank or wallet slip.
       }
 
       final finalAmount = amount ?? 0.0;

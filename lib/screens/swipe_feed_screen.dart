@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
@@ -5,7 +6,6 @@ import '../core/constants/categories.dart';
 import '../core/theme/app_theme.dart';
 import '../models/expense_card_item.dart';
 import '../widgets/corner_target_box.dart';
-import '../widgets/quick_add_sheet.dart';
 import '../widgets/swipeable_slip_card.dart';
 import '../widgets/vault_details_sheet.dart';
 import '../widgets/arcade_button.dart';
@@ -44,6 +44,7 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
   late List<ExpenseCardItem> _pendingCards;
   final List<ExpenseCardItem> _categorizedCards = [];
   CornerPosition? _hoveredCorner;
+  int _laterHoverSide = 0; // -1 = left, 1 = right, 0 = none
 
   final Map<String, double> _categoryTotals = {
     'food': 0.0,
@@ -594,6 +595,77 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
     widget.onCategorized?.call(item, corner);
   }
 
+  void _skipTopCardToLater() {
+    if (_pendingCards.isEmpty) return;
+
+    HapticFeedback.mediumImpact();
+    final skippedItem = _pendingCards.removeAt(0);
+    setState(() {
+      _pendingCards.add(skippedItem);
+      _laterHoverSide = 0;
+      _hoveredCorner = null;
+    });
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: AppColors.surface,
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 2),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: const BorderSide(color: Color(0xFFD97706), width: 2.0),
+          ),
+          content: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFEF3C7),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: const Color(0xFFD97706), width: 1.5),
+                ),
+                child: const Icon(
+                  Icons.schedule_rounded,
+                  color: Color(0xFFD97706),
+                  size: 18,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'พักสลิปนี้ไว้จัดการทีหลัง',
+                      style: TextStyle(
+                        color: AppColors.textPrimary,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 13,
+                      ),
+                    ),
+                    Text(
+                      '${skippedItem.receiverName} (${NumberFormat('#,##0.00', 'th_TH').format(skippedItem.amount)} ฿) ข้ามไปท้ายคิว',
+                      style: const TextStyle(
+                        color: AppColors.textSecondary,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 11,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+  }
+
   void _undoLastAction() {
     if (_categorizedCards.isEmpty) return;
 
@@ -613,20 +685,183 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
     widget.onUndo?.call();
   }
 
-  void _openQuickAdd() {
+  void _openInspectTopSlip() {
+    if (_pendingCards.isEmpty) return;
+    HapticFeedback.lightImpact();
+    final item = _pendingCards.first;
+
+    final currencyFormatter = NumberFormat('#,##0.00', 'th_TH');
+    final dateFormatter = DateFormat('dd MMMM yyyy, HH:mm น.', 'th_TH');
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => QuickAddSheet(
-        onCardCreated: (newItem) {
-          setState(() {
-            _pendingCards.insert(0, newItem);
-          });
-          HapticFeedback.lightImpact();
-          widget.onQuickAdded?.call(newItem);
-        },
+      builder: (ctx) => SafeArea(
+        child: Container(
+          margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: AppColors.borderDark, width: 2.2),
+            boxShadow: const [
+              BoxShadow(
+                color: AppColors.shadowDefault,
+                offset: Offset(0, 6),
+                blurRadius: 0,
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Top Bar
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: const BoxDecoration(
+                  color: AppColors.surfaceLight,
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
+                  border: Border(
+                    bottom: BorderSide(color: AppColors.border, width: 1.5),
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          width: 10,
+                          height: 10,
+                          decoration: BoxDecoration(
+                            color: item.bankColor,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          item.bankName,
+                          style: TextStyle(
+                            fontWeight: FontWeight.w900,
+                            fontSize: 13,
+                            color: item.bankColor,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          '฿ ${currencyFormatter.format(item.amount)}',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w900,
+                            fontSize: 14,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                      ],
+                    ),
+                    GestureDetector(
+                      onTap: () => Navigator.of(ctx).pop(),
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: AppColors.surface,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: AppColors.border, width: 1.2),
+                        ),
+                        child: const Icon(
+                          Icons.close_rounded,
+                          size: 16,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // Slip Image viewer with InteractiveViewer
+              Padding(
+                padding: const EdgeInsets.all(14),
+                child: item.imagePath != null && item.imagePath!.isNotEmpty
+                    ? Container(
+                        constraints: BoxConstraints(
+                          maxHeight: MediaQuery.of(context).size.height * 0.45,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF1F5F9),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: AppColors.border, width: 1.2),
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(15),
+                          child: InteractiveViewer(
+                            panEnabled: true,
+                            scaleEnabled: true,
+                            minScale: 0.8,
+                            maxScale: 3.5,
+                            child: item.imagePath!.startsWith('assets/')
+                                ? Image.asset(item.imagePath!, fit: BoxFit.contain)
+                                : Image.file(File(item.imagePath!), fit: BoxFit.contain),
+                          ),
+                        ),
+                      )
+                    : Container(
+                        height: 120,
+                        alignment: Alignment.center,
+                        child: const Text(
+                          'สลิปนี้เป็นข้อมูลจำลอง (ไม่มีไฟล์ภาพ)',
+                          style: TextStyle(
+                            color: AppColors.textSecondary,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+              ),
+
+              // Meta Details
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                child: Column(
+                  children: [
+                    _buildInspectRow('ผู้รับเงิน', item.receiverName),
+                    const SizedBox(height: 4),
+                    _buildInspectRow('วัน-เวลา', dateFormatter.format(item.dateTime)),
+                    if (item.note != null && item.note!.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      _buildInspectRow('บันทึกช่วยจำ', item.note!),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
+    );
+  }
+
+  Widget _buildInspectRow(String label, String value) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 11.5,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textSecondary,
+          ),
+        ),
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 11.5,
+            fontWeight: FontWeight.w800,
+            color: AppColors.textPrimary,
+          ),
+        ),
+      ],
     );
   }
 
@@ -669,109 +904,34 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
       body: SafeArea(
         child: Stack(
           children: [
-            // Top Navigation & Cartoon Moneta Header
-            Positioned(
-              top: 6,
-              left: 14,
-              right: 14,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(7),
-                        decoration: BoxDecoration(
-                          color: AppColors.gold,
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(
-                            color: AppColors.goldShadow,
-                            width: 2.0,
-                          ),
-                          boxShadow: const [
-                            BoxShadow(
-                              color: AppColors.goldShadow,
-                              offset: Offset(0, 2.5),
-                              blurRadius: 0,
-                            ),
-                          ],
-                        ),
-                        child: const Icon(
-                          Icons.monetization_on_rounded,
-                          color: Color(0xFF1E293B),
-                          size: 22,
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: const [
-                          Text(
-                            'MONETA',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w900,
-                              letterSpacing: 1.0,
-                              color: AppColors.textPrimary,
-                            ),
-                          ),
-                          Text(
-                            'ปัดสลิป จัดการค่าใช้จ่าย',
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
+            // Minimal Swipe Arena HUD (Deck Queue Counter - Only when deck has cards)
+            if (_pendingCards.isNotEmpty)
+              Positioned(
+                top: 8,
+                left: 20,
+                right: 20,
+                child: Center(
+                  child: ArcadeBadge(
+                    label: 'คิวสลิป ${_pendingCards.length} ใบ',
+                    icon: Icons.style_rounded,
+                    color: AppColors.surface,
+                    borderColor: AppColors.borderDark,
+                    shadowColor: AppColors.shadowDefault,
+                    iconColor: AppColors.goldShadow,
+                    textColor: AppColors.textPrimary,
+                    depth: 2.0,
+                    fontSize: 12,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 6,
+                    ),
                   ),
-                  Row(
-                    children: [
-                      // Streak Badge - Cartoon 3D Flame Pill
-                      ArcadeBadge(
-                        label: '7 วัน',
-                        leading: const Text(
-                          '🔥',
-                          style: TextStyle(fontSize: 12),
-                        ),
-                        color: const Color(0xFFFFF7ED),
-                        borderColor: const Color(0xFFF97316),
-                        shadowColor: const Color(0xFFEA580C),
-                        textColor: const Color(0xFFEA580C),
-                        depth: 2.0,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 9,
-                          vertical: 4,
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-
-                      // Pending Cards Pill - Cartoon 3D Counter
-                      ArcadeBadge(
-                        label: '${_pendingCards.length} สลิป',
-                        icon: Icons.style_rounded,
-                        color: AppColors.surface,
-                        borderColor: AppColors.borderDark,
-                        shadowColor: AppColors.shadowDefault,
-                        iconColor: AppColors.vaultQuadrigaShadow,
-                        textColor: AppColors.textPrimary,
-                        depth: 2.0,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 9,
-                          vertical: 4,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+                ),
               ),
-            ),
 
-            // Top-Left Vault (1. Food)
+            // Top-Left Vault (1. Food) - Moved up to 40 for more vertical arena space!
             Positioned(
-              top: 54,
+              top: 40,
               left: 12,
               child: CornerTargetBox(
                 category: tavernaCat,
@@ -782,9 +942,9 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
               ),
             ),
 
-            // Top-Right Vault (2. Transport)
+            // Top-Right Vault (2. Transport) - Moved up to 40 for more vertical arena space!
             Positioned(
-              top: 54,
+              top: 40,
               right: 12,
               child: CornerTargetBox(
                 category: quadrigaCat,
@@ -821,10 +981,32 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
               ),
             ),
 
-            // Center Arena Card Stack: Strictly bounded between top vaults and bottom vaults
+            // Left Lateral Drag-out Target (Only shown when dragging left to later)
+            if (_pendingCards.isNotEmpty && _laterHoverSide == -1)
+              Positioned(
+                left: 6,
+                top: 260,
+                bottom: 260,
+                child: Center(
+                  child: _buildSideDropZone(isLeft: true),
+                ),
+              ),
+
+            // Right Lateral Drag-out Target (Only shown when dragging right to later)
+            if (_pendingCards.isNotEmpty && _laterHoverSide == 1)
+              Positioned(
+                right: 6,
+                top: 260,
+                bottom: 260,
+                child: Center(
+                  child: _buildSideDropZone(isLeft: false),
+                ),
+              ),
+
+            // Center Arena Card Stack: Positioned smoothly between vaults
             Positioned.fill(
-              top: 136,
-              bottom: 215,
+              top: 122,
+              bottom: 205,
               child: Center(
                 child: _pendingCards.isEmpty
                     ? _buildCompletionState()
@@ -832,16 +1014,17 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
               ),
             ),
 
-            // Arcade Action Controls Bar - Floating cleanly above the bottom dock at 76!
+            // Arcade Action Controls Bar - Pure Swiping Controls (Undo, Inspect, Skip)
             Positioned(
-              bottom: 76,
-              left: 16,
-              right: 16,
+              bottom: 74,
+              left: 20,
+              right: 20,
               child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // 1. Undo 3D Button (Only active when cards categorized)
+                  // 1. Undo 3D Button (Recovers last categorized slip)
                   Opacity(
-                    opacity: _categorizedCards.isEmpty ? 0.45 : 1.0,
+                    opacity: _categorizedCards.isEmpty ? 0.4 : 1.0,
                     child: ArcadeButton(
                       onPressed: _categorizedCards.isEmpty
                           ? null
@@ -851,112 +1034,65 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
                       borderColor: AppColors.borderDark,
                       borderWidth: 2.0,
                       depth: 3.5,
-                      borderRadius: BorderRadius.circular(14),
+                      borderRadius: BorderRadius.circular(16),
                       padding: EdgeInsets.zero,
-                      width: 46,
-                      height: 46,
+                      width: 52,
+                      height: 48,
                       child: const Icon(
                         Icons.undo_rounded,
-                        size: 22,
+                        size: 23,
                         color: AppColors.textPrimary,
                       ),
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 16),
 
-                  // 2. Quick Add 3D Button - Big Chunky Arcade Gold
-                  Expanded(
+                  // 2. Inspect 3D Button (View original slip high-res & zoom)
+                  Opacity(
+                    opacity: _pendingCards.isEmpty ? 0.4 : 1.0,
                     child: ArcadeButton(
-                      onPressed: _openQuickAdd,
-                      color: AppColors.gold,
-                      shadowColor: AppColors.goldShadow,
-                      borderColor: AppColors.goldShadow,
+                      onPressed: _pendingCards.isEmpty
+                          ? null
+                          : _openInspectTopSlip,
+                      color: AppColors.surface,
+                      shadowColor: AppColors.shadowDefault,
+                      borderColor: AppColors.borderDark,
                       borderWidth: 2.0,
                       depth: 3.5,
                       borderRadius: BorderRadius.circular(16),
-                      height: 46,
-                      padding: const EdgeInsets.symmetric(horizontal: 10),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: const [
-                          Icon(
-                            Icons.bolt_rounded,
-                            size: 20,
-                            color: Color(0xFF1E293B),
-                          ),
-                          SizedBox(width: 4),
-                          Text(
-                            'บันทึกด่วน',
-                            style: TextStyle(
-                              fontSize: 13.5,
-                              fontWeight: FontWeight.w900,
-                              color: Color(0xFF1E293B),
-                            ),
-                          ),
-                        ],
+                      padding: EdgeInsets.zero,
+                      width: 56,
+                      height: 48,
+                      child: const Icon(
+                        Icons.image_search_rounded,
+                        size: 24,
+                        color: AppColors.vaultQuadrigaShadow,
                       ),
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 16),
 
-                  // 3. Scan Slips 3D Button - Duolingo Sky Blue
-                  ArcadeButton(
-                    onPressed: _isScanningSlips ? null : _openScanOptionsSheet,
-                    color: AppColors.vaultQuadriga,
-                    shadowColor: AppColors.vaultQuadrigaShadow,
-                    borderColor: AppColors.vaultQuadrigaShadow,
-                    borderWidth: 2.0,
-                    depth: 3.5,
-                    borderRadius: BorderRadius.circular(16),
-                    height: 46,
-                    padding: const EdgeInsets.symmetric(horizontal: 14),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        _isScanningSlips
-                            ? const SizedBox(
-                                width: 16,
-                                height: 16,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2.2,
-                                  color: Colors.white,
-                                ),
-                              )
-                            : const Icon(
-                                Icons.document_scanner_rounded,
-                                size: 19,
-                                color: Colors.white,
-                              ),
-                        const SizedBox(width: 6),
-                        const Text(
-                          'สแกน',
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w900,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-
-                  // 4. Reset Deck 3D Button - Slate Pill
-                  ArcadeButton(
-                    onPressed: _resetToSample,
-                    color: AppColors.surface,
-                    shadowColor: AppColors.shadowDefault,
-                    borderColor: AppColors.borderDark,
-                    borderWidth: 1.8,
-                    depth: 3.0,
-                    borderRadius: BorderRadius.circular(14),
-                    padding: EdgeInsets.zero,
-                    width: 46,
-                    height: 46,
-                    child: const Icon(
-                      Icons.refresh_rounded,
-                      size: 20,
-                      color: AppColors.textSecondary,
+                  // 3. Skip / Later 3D Button (Pushes current slip to back of deck)
+                  Opacity(
+                    opacity: _pendingCards.isEmpty ? 0.4 : 1.0,
+                    child: ArcadeButton(
+                      onPressed: _pendingCards.isEmpty
+                          ? null
+                          : _skipTopCardToLater,
+                      color: const Color(0xFFFEF3C7),
+                      shadowColor: const Color(0xFFD97706),
+                      borderColor: const Color(0xFFD97706),
+                      borderWidth: 2.0,
+                      depth: 3.5,
+                      borderRadius: BorderRadius.circular(16),
+                      padding: EdgeInsets.zero,
+                      width: 52,
+                      height: 48,
+                      child: const Icon(
+                        Icons.schedule_rounded,
+                        size: 22,
+                        color: Color(0xFFB45309),
+                      ),
                     ),
                   ),
                 ],
@@ -1002,9 +1138,74 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
               _hoveredCorner = corner;
             });
           },
+          onLaterSideChanged: (side) {
+            if (_laterHoverSide != side) {
+              setState(() {
+                _laterHoverSide = side;
+              });
+            }
+          },
+          onSkipLater: _skipTopCardToLater,
           onCategorized: (corner) {
             _onCardCategorized(item, corner);
           },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSideDropZone({required bool isLeft}) {
+    return GestureDetector(
+      onTap: _pendingCards.isEmpty ? null : _skipTopCardToLater,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOutCubic,
+        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 14),
+        decoration: BoxDecoration(
+          color: const Color(0xFFFEF3C7),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: const Color(0xFFD97706),
+            width: 2.2,
+          ),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0xFFB45309),
+              offset: Offset(0, 3.5),
+              blurRadius: 0,
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              isLeft
+                  ? Icons.keyboard_double_arrow_left_rounded
+                  : Icons.keyboard_double_arrow_right_rounded,
+              size: 20,
+              color: const Color(0xFFB45309),
+            ),
+            const SizedBox(height: 6),
+            RotatedBox(
+              quarterTurns: isLeft ? 3 : 1,
+              child: const Text(
+                'ปล่อยเพื่อพัก',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w900,
+                  color: Color(0xFF92400E),
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ),
+            const SizedBox(height: 6),
+            const Icon(
+              Icons.schedule_rounded,
+              size: 16,
+              color: Color(0xFFB45309),
+            ),
+          ],
         ),
       ),
     );
@@ -1019,8 +1220,8 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
     final currencyFormatter = NumberFormat('#,##0.00', 'th_TH');
 
     return Container(
-      width: 250,
-      padding: const EdgeInsets.all(18),
+      width: 295,
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(24),
@@ -1071,7 +1272,7 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
             'คุณได้จัดหมวดหมู่สลิป ${_categorizedCards.length} รายการเรียบร้อยแล้ว',
             textAlign: TextAlign.center,
             style: const TextStyle(
-              fontSize: 12,
+              fontSize: 12.5,
               fontWeight: FontWeight.w600,
               color: AppColors.textSecondary,
               height: 1.4,
@@ -1160,15 +1361,24 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
             depth: 3.0,
             borderRadius: BorderRadius.circular(16),
             padding: const EdgeInsets.symmetric(vertical: 11),
-            child: const Center(
-              child: Text(
-                'โหลดตัวอย่างสลิปมาลอง (Sample Deck)',
-                style: TextStyle(
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.textPrimary,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: const [
+                Icon(
+                  Icons.refresh_rounded,
+                  size: 18,
+                  color: AppColors.textSecondary,
                 ),
-              ),
+                SizedBox(width: 6),
+                Text(
+                  'โหลดชุดสลิปตัวอย่างใหม่',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ],
             ),
           ),
         ],

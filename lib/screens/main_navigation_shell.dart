@@ -510,58 +510,60 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
               ),
             ),
 
-          // Arcade Bottom Navigation Dock (Light Mode + Flat 3D)
+          // Duolingo-Style Attached Bottom Navigation Bar (Light Mode)
           Positioned(
-            left: 20,
-            right: 20,
-            bottom: 14,
-            child: _buildArcadeBottomBar(),
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: _buildDuolingoBottomBar(),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildArcadeBottomBar() {
+  Widget _buildDuolingoBottomBar() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: AppColors.borderDark, width: 2.0),
-        boxShadow: const [
-          BoxShadow(
-            color: AppColors.shadowDefault,
-            offset: Offset(0, 4),
-            blurRadius: 0, // Flat 3D Cartoon Dock
+      decoration: const BoxDecoration(
+        color: AppColors.surface, // Pure White (#FFFFFF)
+        border: Border(
+          top: BorderSide(
+            color: Color(0xFFE2E8F0), // Crisp 2px top border
+            width: 2.0,
           ),
-        ],
+        ),
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          _buildNavItem(
-            index: 0,
-            icon: Icons.dashboard_rounded,
-            label: 'หน้าหลัก',
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildNavItem(
+                index: 0,
+                icon: Icons.cottage_rounded,
+                iconColor: const Color(0xFFFF9600), // Duolingo warm orange/gold house
+              ),
+              _buildNavItem(
+                index: 1,
+                icon: Icons.style_rounded,
+                iconColor: const Color(0xFF1CB0F6), // Duolingo Electric Sky Blue
+                badgeCount: _pendingCards.length,
+              ),
+              _buildNavItem(
+                index: 2,
+                icon: Icons.receipt_long_rounded,
+                iconColor: const Color(0xFFCE82FF), // Playful Lilac Purple
+              ),
+              _buildNavItem(
+                index: 3,
+                icon: Icons.pie_chart_rounded,
+                iconColor: const Color(0xFF58CC02), // Duolingo Lime Green
+              ),
+            ],
           ),
-          _buildNavItem(
-            index: 1,
-            icon: Icons.style_rounded,
-            label: 'ปัดสลิป',
-            badgeCount: _pendingCards.length,
-          ),
-          _buildNavItem(
-            index: 2,
-            icon: Icons.receipt_long_rounded,
-            label: 'ประวัติรายการ',
-          ),
-          _buildNavItem(
-            index: 3,
-            icon: Icons.pie_chart_rounded,
-            label: 'สถิติ',
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -569,7 +571,7 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
   Widget _buildNavItem({
     required int index,
     required IconData icon,
-    String? label,
+    required Color iconColor,
     int? badgeCount,
   }) {
     final bool isSelected = _currentIndex == index;
@@ -577,78 +579,82 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
     return GestureDetector(
       onTap: () {
         if (_currentIndex != index) {
-          HapticFeedback.selectionClick();
+          HapticFeedback.lightImpact();
           setState(() => _currentIndex = index);
         }
       },
       behavior: HitTestBehavior.opaque,
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        duration: const Duration(milliseconds: 160),
+        curve: Curves.easeOutBack,
+        width: 66,
+        height: 48,
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.gold : Colors.transparent,
+          // Duolingo Signature Selection: Crisp Sky Blue Border + Soft Tinted Fill
+          color: isSelected ? const Color(0xFFE8F7FE) : Colors.transparent,
           borderRadius: BorderRadius.circular(16),
-          border: isSelected
-              ? Border.all(color: AppColors.goldShadow, width: 1.8)
-              : Border.all(color: Colors.transparent, width: 1.8),
-          boxShadow: isSelected
-              ? const [
-                  BoxShadow(
-                    color: AppColors.goldShadow,
-                    offset: Offset(0, 2),
-                    blurRadius: 0,
-                  ),
-                ]
-              : null,
+          border: Border.all(
+            color: isSelected ? const Color(0xFF1CB0F6) : Colors.transparent,
+            width: 2.2,
+          ),
         ),
-        child: Stack(
-          clipBehavior: Clip.none,
-          children: [
-            Icon(
-              icon,
-              size: 22,
-              color: isSelected
-                  ? const Color(0xFF1E293B)
-                  : AppColors.textSecondary,
-            ),
-            if (badgeCount != null && badgeCount > 0)
-              Positioned(
-                top: -6,
-                right: -8,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 4,
-                    vertical: 1,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.vaultTaverna,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: Colors.white, width: 1.2),
-                    boxShadow: const [
-                      BoxShadow(
-                        color: AppColors.vaultTavernaShadow,
-                        offset: Offset(0, 1),
-                        blurRadius: 0,
-                      ),
-                    ],
-                  ),
-                  constraints: const BoxConstraints(
-                    minWidth: 16,
-                    minHeight: 16,
-                  ),
-                  child: Center(
-                    child: Text(
-                      badgeCount > 99 ? '99+' : '$badgeCount',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 9,
-                        fontWeight: FontWeight.w900,
+        child: Center(
+          child: Stack(
+            clipBehavior: Clip.none,
+            alignment: Alignment.center,
+            children: [
+              AnimatedScale(
+                scale: isSelected ? 1.08 : 0.95,
+                duration: const Duration(milliseconds: 160),
+                curve: Curves.easeOutBack,
+                child: Icon(
+                  icon,
+                  size: 28,
+                  color: isSelected
+                      ? iconColor
+                      : iconColor.withValues(alpha: 0.85),
+                ),
+              ),
+              if (badgeCount != null && badgeCount > 0)
+                Positioned(
+                  top: -5,
+                  right: -8,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 5,
+                      vertical: 1.5,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.vaultTaverna,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Colors.white, width: 1.8),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: AppColors.vaultTavernaShadow,
+                          offset: Offset(0, 1),
+                          blurRadius: 0,
+                        ),
+                      ],
+                    ),
+                    constraints: const BoxConstraints(
+                      minWidth: 16,
+                      minHeight: 16,
+                    ),
+                    child: Center(
+                      child: Text(
+                        badgeCount > 99 ? '99+' : '$badgeCount',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 9.5,
+                          fontWeight: FontWeight.w900,
+                          height: 1,
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
-          ],
+            ],
+          ),
         ),
       ),
     );
