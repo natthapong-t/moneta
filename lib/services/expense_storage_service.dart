@@ -7,6 +7,8 @@ class ExpenseStorageService {
   static const String _keyCategorized = 'moneta_categorized_items';
   static const String _keyPending = 'moneta_pending_items';
   static const String _keyProcessedRefs = 'moneta_processed_refs';
+  static const String _keyScannedAssetIds = 'moneta_scanned_asset_ids';
+  static const String _keyLastScanTimestamp = 'moneta_last_scan_timestamp';
   static const String _keyMonthlyBudget = 'moneta_monthly_budget';
   static const String _keyStreakDays = 'moneta_streak_days';
 
@@ -101,7 +103,50 @@ class ExpenseStorageService {
     }
   }
 
-  /// Reset all expenses back to the initial sample cards and clear processed references
+  /// Get set of scanned asset IDs (both slips and non-slips)
+  Future<Set<String>> getScannedAssetIds() async {
+    try {
+      final p = await prefs;
+      final list = p.getStringList(_keyScannedAssetIds) ?? [];
+      return list.toSet();
+    } catch (e) {
+      return {};
+    }
+  }
+
+  /// Add newly scanned asset IDs to persistent cache
+  Future<void> addScannedAssetIds(Iterable<String> ids) async {
+    try {
+      final p = await prefs;
+      final current = (p.getStringList(_keyScannedAssetIds) ?? []).toSet();
+      current.addAll(ids.where((id) => id.isNotEmpty));
+      await p.setStringList(_keyScannedAssetIds, current.toList());
+    } catch (e) {
+      debugPrint('Error saving scanned asset IDs: $e');
+    }
+  }
+
+  /// Last scan timestamp
+  Future<DateTime?> getLastScanTime() async {
+    try {
+      final p = await prefs;
+      final ms = p.getInt(_keyLastScanTimestamp);
+      return ms != null ? DateTime.fromMillisecondsSinceEpoch(ms) : null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  Future<void> setLastScanTime(DateTime time) async {
+    try {
+      final p = await prefs;
+      await p.setInt(_keyLastScanTimestamp, time.millisecondsSinceEpoch);
+    } catch (e) {
+      debugPrint('Error setting last scan time: $e');
+    }
+  }
+
+  /// Reset all expenses back to the initial sample cards and clear processed references & scan cache
   Future<void> resetToSample() async {
     try {
       final p = await prefs;
@@ -111,18 +156,22 @@ class ExpenseStorageService {
       await p.setStringList(_keyPending, rawList);
       await p.setStringList(_keyCategorized, []);
       await p.remove(_keyProcessedRefs);
+      await p.remove(_keyScannedAssetIds);
+      await p.remove(_keyLastScanTimestamp);
     } catch (e) {
       debugPrint('Error resetting to sample: $e');
     }
   }
 
-  /// Completely clear all pending, categorized expenses and processed references
+  /// Completely clear all pending, categorized expenses and processed references & scan cache
   Future<void> clearAllData() async {
     try {
       final p = await prefs;
       await p.setStringList(_keyPending, []);
       await p.setStringList(_keyCategorized, []);
       await p.remove(_keyProcessedRefs);
+      await p.remove(_keyScannedAssetIds);
+      await p.remove(_keyLastScanTimestamp);
     } catch (e) {
       debugPrint('Error clearing all data: $e');
     }

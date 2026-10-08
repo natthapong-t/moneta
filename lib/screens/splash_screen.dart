@@ -183,7 +183,7 @@ class _SplashScreenState extends State<SplashScreen>
                     ),
                     const SizedBox(height: 10),
                     const Text(
-                      'กำลังจัดเตรียมคลังหลวง...',
+                      'กำลังโหลดข้อมูล...',
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,

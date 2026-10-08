@@ -169,7 +169,7 @@ class _QuickIncomeSheetState extends State<QuickIncomeSheet> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: const [
                         Text(
-                          'หยอดเหรียญรายรับ',
+                          'เพิ่มรายรับ',
                           style: TextStyle(
                             fontSize: 17,
                             fontWeight: FontWeight.w900,
@@ -177,7 +177,7 @@ class _QuickIncomeSheetState extends State<QuickIncomeSheet> {
                           ),
                         ),
                         Text(
-                          'Insert Coin (เติมกระสุน / เงินเข้า)',
+                          'บันทึกรายการเงินเข้า',
                           style: TextStyle(
                             fontSize: 12,
                             color: AppColors.textSecondary,
@@ -386,7 +386,7 @@ class _QuickIncomeSheetState extends State<QuickIncomeSheet> {
               shadowColor: const Color(0xFF0D6832),
               textColor: Colors.white,
               icon: Icons.check_circle_rounded,
-              label: 'ยืนยันหยอดเหรียญรายรับ',
+              label: 'บันทึกรายรับ',
               height: 48,
             ),
           ],

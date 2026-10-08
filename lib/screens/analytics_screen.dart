@@ -425,7 +425,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
 
               // Category Breakdown Title
               const Text(
-                'สัดส่วนรายจ่ายตามหมวดหมู่ (Category Share)',
+                'สัดส่วนรายจ่ายตามหมวดหมู่',
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w900,

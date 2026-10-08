@@ -140,7 +140,7 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
                         ),
                       ),
                       Text(
-                        'Quick Expense (จดรายจ่ายทันใจ)',
+                        'จดบันทึกรายจ่าย',
                         style: TextStyle(
                           fontSize: 12,
                           color: AppColors.textSecondary,

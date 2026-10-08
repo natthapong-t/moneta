@@ -34,17 +34,17 @@ class SlipScanProgress {
 class SlipParserService {
   // Official Bank Identification Codes in Thailand (BOT / PromptPay EMVCo)
   static const Map<String, ThaiBankInfo> bankCodeMap = {
-    '004': ThaiBankInfo(name: 'K PLUS (กสิกรไทย)', color: Color(0xFF138F46)),
-    '014': ThaiBankInfo(name: 'SCB EASY (ไทยพาณิชย์)', color: Color(0xFF4E2A84)),
-    '006': ThaiBankInfo(name: 'Krungthai NEXT (กรุงไทย)', color: Color(0xFF00A3E0)),
-    '002': ThaiBankInfo(name: 'Bangkok Bank (กรุงเทพ)', color: Color(0xFF1E3A8A)),
-    '011': ThaiBankInfo(name: 'ttb touch (ทีทีบี)', color: Color(0xFF002D62)),
-    '025': ThaiBankInfo(name: 'TrueMoney / กรุงศรี', color: Color(0xFFFA5A00)),
-    '034': ThaiBankInfo(name: 'BAAC (ธ.ก.ส.)', color: Color(0xFF006633)),
-    '030': ThaiBankInfo(name: 'GSB (ออมสิน)', color: Color(0xFFEB198B)),
-    '067': ThaiBankInfo(name: 'TISCO', color: Color(0xFF005DAA)),
-    '069': ThaiBankInfo(name: 'Kiatnakin Phatra', color: Color(0xFF6B2C8B)),
-    '073': ThaiBankInfo(name: 'LH Bank', color: Color(0xFF6D6E71)),
+    '004': ThaiBankInfo(name: 'กสิกรไทย', color: Color(0xFF138F46)),
+    '014': ThaiBankInfo(name: 'ไทยพาณิชย์', color: Color(0xFF4E2A84)),
+    '006': ThaiBankInfo(name: 'กรุงไทย', color: Color(0xFF00A3E0)),
+    '002': ThaiBankInfo(name: 'กรุงเทพ', color: Color(0xFF1E3A8A)),
+    '011': ThaiBankInfo(name: 'ทีทีบี', color: Color(0xFF002D62)),
+    '025': ThaiBankInfo(name: 'กรุงศรี / ทรูมันนี่', color: Color(0xFFFA5A00)),
+    '034': ThaiBankInfo(name: 'ธ.ก.ส.', color: Color(0xFF006633)),
+    '030': ThaiBankInfo(name: 'ออมสิน', color: Color(0xFFEB198B)),
+    '067': ThaiBankInfo(name: 'ทิสโก้', color: Color(0xFF005DAA)),
+    '069': ThaiBankInfo(name: 'เกียรตินาคินภัทร', color: Color(0xFF6B2C8B)),
+    '073': ThaiBankInfo(name: 'แลนด์ แอนด์ เฮ้าส์', color: Color(0xFF6D6E71)),
   };
 
   /// Known Thai Mobile Banking, Fintech & Payment album/folder keywords
@@ -141,46 +141,42 @@ class SlipParserService {
     }
   }
 
-  /// Stream slips discovered in the background prioritizing financial albums
-  /// Phase 1 (Fast-Lane): Dedicated banking app albums (e.g. SCB Easy, Krungthai NEXT, MAKE, Dime!)
-  /// Phase 2 (General Lane): Scans recent gallery skipping already-processed assets
+  /// Stream slips discovered in the background in chronological order (Newest -> Oldest)
+  /// Walks through the unified photo gallery by creation date so the user sees a natural timeline
   Stream<SlipScanProgress> streamGallerySlips({
     int? maxScan,
     Set<String> knownReferenceNos = const {},
     Set<String> knownImagePaths = const {},
+    Set<String> knownAssetIds = const {},
+    void Function(String assetId, String? imagePath)? onAssetScanned,
   }) async* {
     final PermissionState ps = await PhotoManager.requestPermissionExtend();
     if (!ps.isAuth && !ps.hasAccess) {
       return;
     }
 
-    // 1. Fetch ALL albums including banking app custom albums
-    final List<AssetPathEntity> allAlbums = await PhotoManager.getAssetPathList(
+    // Unified camera roll ordered strictly from newest to oldest
+    final filterOption = FilterOptionGroup(
+      orders: [
+        const OrderOption(
+          type: OrderOptionType.createDate,
+          asc: false, // Descending: Newest photos first!
+        ),
+      ],
+    );
+
+    final List<AssetPathEntity> albums = await PhotoManager.getAssetPathList(
       type: RequestType.image,
-      onlyAll: false,
+      onlyAll: true,
+      filterOption: filterOption,
     );
-    if (allAlbums.isEmpty) return;
+    if (albums.isEmpty) return;
 
-    // 2. Identify priority financial albums and the general album
-    final List<AssetPathEntity> priorityAlbums = allAlbums
-        .where((a) => !a.isAll && isFinancialAlbum(a.name))
-        .toList();
-
-    final AssetPathEntity generalAlbum = allAlbums.firstWhere(
-      (a) => a.isAll,
-      orElse: () => allAlbums.first,
-    );
-
-    // Compute total assets to scan
-    int priorityAssetCount = 0;
-    for (final album in priorityAlbums) {
-      priorityAssetCount += await album.assetCountAsync;
-    }
-    final int generalAssetCount = await generalAlbum.assetCountAsync;
-    final int totalCombined = priorityAssetCount + generalAssetCount;
-    final int scanTarget = (maxScan != null && maxScan > 0 && maxScan < totalCombined)
+    final AssetPathEntity timelineAlbum = albums.first;
+    final int totalAssets = await timelineAlbum.assetCountAsync;
+    final int scanTarget = (maxScan != null && maxScan > 0 && maxScan < totalAssets)
         ? maxScan
-        : totalCombined;
+        : totalAssets;
 
     final barcodeScanner = BarcodeScanner(formats: [BarcodeFormat.qrCode]);
     final textRecognizer = TextRecognizer(script: TextRecognitionScript.latin);
@@ -188,129 +184,49 @@ class SlipParserService {
     int scannedSoFar = 0;
     int foundCount = 0;
     const int batchSize = 25;
-    final Set<String> processedAssetIds = {};
     final Set<String> processedPaths = Set<String>.from(knownImagePaths);
     final Set<String> existingRefs = Set<String>.from(knownReferenceNos);
 
     try {
-      // -----------------------------------------------------------------
-      // PHASE 1: Priority Financial Albums (The "Fast-Lane" 🚀)
-      // Dedicated banking folders where nearly 100% of photos are slips!
-      // -----------------------------------------------------------------
-      for (final album in priorityAlbums) {
-        final albumTotal = await album.assetCountAsync;
-        for (int page = 0; page * batchSize < albumTotal; page++) {
-          if (maxScan != null && scannedSoFar >= maxScan) break;
-
-          final start = page * batchSize;
-          final end = (start + batchSize > albumTotal) ? albumTotal : start + batchSize;
-
-          final List<AssetEntity> batch = await album.getAssetListRange(
-            start: start,
-            end: end,
-          );
-
-          for (final asset in batch) {
-            scannedSoFar++;
-            processedAssetIds.add(asset.id);
-
-            // Pre-filter: Bank slips are portrait or square
-            if (asset.width > asset.height * 1.25) {
-              continue;
-            }
-
-            final file = await asset.file;
-            if (file == null || !await file.exists()) continue;
-
-            // Fast-skip screenshots, stock apps, and food delivery folders to save CPU
-            if (isExcludedAlbumOrPath(file.path)) {
-              continue;
-            }
-
-            if (processedPaths.contains(file.path)) {
-              continue;
-            }
-            processedPaths.add(file.path);
-
-            final item = await parseSingleSlip(
-              file.path,
-              scanner: barcodeScanner,
-              recognizer: textRecognizer,
-              sourceAlbum: album.name,
-              assetDateTime: asset.createDateTime,
-            );
-
-            if (item != null) {
-              if (item.referenceNo.isNotEmpty && existingRefs.contains(item.referenceNo)) {
-                continue;
-              }
-              if (item.referenceNo.isNotEmpty) {
-                existingRefs.add(item.referenceNo);
-              }
-
-              foundCount++;
-              yield SlipScanProgress(
-                scanned: scannedSoFar,
-                total: scanTarget,
-                foundCount: foundCount,
-                newSlip: item,
-                currentSource: album.name,
-              );
-            }
-
-            await Future.delayed(const Duration(milliseconds: 5));
-          }
-
-          yield SlipScanProgress(
-            scanned: scannedSoFar,
-            total: scanTarget,
-            foundCount: foundCount,
-            newSlip: null,
-            currentSource: album.name,
-          );
-        }
-      }
-
-      // -----------------------------------------------------------------
-      // PHASE 2: General Album Scan (Catch-all for Camera / LINE / Screenshots)
-      // -----------------------------------------------------------------
-      for (int page = 0; page * batchSize < generalAssetCount; page++) {
+      for (int page = 0; page * batchSize < scanTarget; page++) {
         if (maxScan != null && scannedSoFar >= maxScan) break;
 
         final start = page * batchSize;
-        final end = (start + batchSize > generalAssetCount)
-            ? generalAssetCount
-            : start + batchSize;
+        final end = (start + batchSize > scanTarget) ? scanTarget : start + batchSize;
 
-        final List<AssetEntity> batch = await generalAlbum.getAssetListRange(
+        final List<AssetEntity> batch = await timelineAlbum.getAssetListRange(
           start: start,
           end: end,
         );
 
         for (final asset in batch) {
-          // Instant 0ms skip if this asset was already scanned in Phase 1!
-          if (processedAssetIds.contains(asset.id)) {
-            scannedSoFar++;
+          scannedSoFar++;
+
+          // ⚡ Instant Cache Skip: If asset was already scanned (slip or non-slip), skip in 0.001ms
+          if (knownAssetIds.contains(asset.id)) {
             continue;
           }
 
-          scannedSoFar++;
-          processedAssetIds.add(asset.id);
-
-          // Pre-filter: portrait or square
+          // Pre-filter: Bank slips are portrait or square
           if (asset.width > asset.height * 1.25) {
+            onAssetScanned?.call(asset.id, null);
             continue;
           }
 
           final file = await asset.file;
-          if (file == null || !await file.exists()) continue;
+          if (file == null || !await file.exists()) {
+            onAssetScanned?.call(asset.id, null);
+            continue;
+          }
 
-          // Fast-skip screenshots, stock apps, and food delivery folders in general gallery
+          // Fast-skip screenshots, stock apps, and food delivery folders to save CPU
           if (isExcludedAlbumOrPath(file.path)) {
+            onAssetScanned?.call(asset.id, file.path);
             continue;
           }
 
           if (processedPaths.contains(file.path)) {
+            onAssetScanned?.call(asset.id, file.path);
             continue;
           }
           processedPaths.add(file.path);
@@ -319,9 +235,12 @@ class SlipParserService {
             file.path,
             scanner: barcodeScanner,
             recognizer: textRecognizer,
-            sourceAlbum: 'คลังภาพทั่วไป',
+            sourceAlbum: 'ไทม์ไลน์ล่าสุด',
             assetDateTime: asset.createDateTime,
           );
+
+          // Mark this asset as analyzed so it is NEVER re-scanned in the future
+          onAssetScanned?.call(asset.id, file.path);
 
           if (item != null) {
             if (item.referenceNo.isNotEmpty && existingRefs.contains(item.referenceNo)) {
@@ -337,7 +256,7 @@ class SlipParserService {
               total: scanTarget,
               foundCount: foundCount,
               newSlip: item,
-              currentSource: 'คลังภาพทั่วไป',
+              currentSource: 'ไทม์ไลน์ล่าสุด',
             );
           }
 
@@ -349,7 +268,7 @@ class SlipParserService {
           total: scanTarget,
           foundCount: foundCount,
           newSlip: null,
-          currentSource: 'คลังภาพทั่วไป',
+          currentSource: 'ไทม์ไลน์ล่าสุด',
         );
       }
     } finally {
@@ -358,7 +277,7 @@ class SlipParserService {
     }
   }
 
-  /// Automatically scans recent gallery images prioritizing financial bank albums
+  /// Automatically scans recent gallery images in chronological order (Newest -> Oldest)
   Future<List<String>> scanDeviceGalleryImagePaths({int? limit}) async {
     try {
       final PermissionState ps = await PhotoManager.requestPermissionExtend();
@@ -366,50 +285,23 @@ class SlipParserService {
         return [];
       }
 
-      final List<AssetPathEntity> allAlbums = await PhotoManager.getAssetPathList(
+      final filterOption = FilterOptionGroup(
+        orders: [
+          const OrderOption(
+            type: OrderOptionType.createDate,
+            asc: false, // Newest first
+          ),
+        ],
+      );
+
+      final List<AssetPathEntity> albums = await PhotoManager.getAssetPathList(
         type: RequestType.image,
-        onlyAll: false,
+        onlyAll: true,
+        filterOption: filterOption,
       );
 
-      if (allAlbums.isEmpty) return [];
-
-      final List<AssetPathEntity> priorityAlbums = allAlbums
-          .where((a) => !a.isAll && isFinancialAlbum(a.name) && !isExcludedAlbumOrPath(a.name))
-          .toList();
-
-      final AssetPathEntity generalAlbum = allAlbums.firstWhere(
-        (a) => a.isAll,
-        orElse: () => allAlbums.first,
-      );
-
-      final List<String> paths = [];
-      final Set<String> processedAssetIds = {};
-      final Set<String> seenPaths = {};
-
-      // 1. Collect priority financial albums first
-      for (final album in priorityAlbums) {
-        final albumTotal = await album.assetCountAsync;
-        final List<AssetEntity> assets = await album.getAssetListRange(
-          start: 0,
-          end: albumTotal,
-        );
-
-        for (final asset in assets) {
-          processedAssetIds.add(asset.id);
-          if (asset.width > asset.height * 1.25) continue;
-
-          final file = await asset.file;
-          if (file != null &&
-              await file.exists() &&
-              !isExcludedAlbumOrPath(file.path) &&
-              seenPaths.add(file.path)) {
-            paths.add(file.path);
-            if (limit != null && paths.length >= limit) return paths;
-          }
-        }
-      }
-
-      // 2. Collect from general album (skipping already collected)
+      if (albums.isEmpty) return [];
+      final generalAlbum = albums.first;
       final int totalGeneral = await generalAlbum.assetCountAsync;
       final int end = (limit != null && limit > 0 && limit < totalGeneral)
           ? limit
@@ -420,8 +312,10 @@ class SlipParserService {
         end: end,
       );
 
+      final List<String> paths = [];
+      final Set<String> seenPaths = {};
+
       for (final asset in generalAssets) {
-        if (processedAssetIds.contains(asset.id)) continue;
         if (asset.width > asset.height * 1.25) continue;
 
         final file = await asset.file;
@@ -611,34 +505,34 @@ class SlipParserService {
         bankName = 'MAKE by KBank';
         bankColor = const Color(0xFF00A9E0);
       } else if (fullText.contains('K PLUS') || fullText.contains('KBANK')) {
-        bankName = 'K PLUS (กสิกรไทย)';
+        bankName = 'กสิกรไทย';
         bankColor = const Color(0xFF138F46);
       } else if (fullText.contains('SCB')) {
-        bankName = 'SCB EASY (ไทยพาณิชย์)';
+        bankName = 'ไทยพาณิชย์';
         bankColor = const Color(0xFF4E2A84);
       } else if (fullText.contains('Krungthai') || fullText.contains('กรุงไทย')) {
-        bankName = 'Krungthai NEXT (กรุงไทย)';
+        bankName = 'กรุงไทย';
         bankColor = const Color(0xFF00A3E0);
       } else if (fullText.contains('BAAC') || fullText.contains('ธ.ก.ส.')) {
-        bankName = 'BAAC (ธ.ก.ส.)';
+        bankName = 'ธ.ก.ส.';
         bankColor = const Color(0xFF006633);
       } else if (fullLower.contains('rabbit') || fullText.contains('แรบบิท')) {
-        bankName = 'Rabbit LINE Pay';
+        bankName = 'แรบบิท ไลน์เพย์';
         bankColor = const Color(0xFF00B900);
       } else if (fullLower.contains('ttb') || fullText.contains('ทีทีบี')) {
-        bankName = 'ttb touch (ทีทีบี)';
+        bankName = 'ทีทีบี';
         bankColor = const Color(0xFF002D62);
       } else if (fullLower.contains('bangkok bank') || fullText.contains('บัวหลวง') || fullText.contains('กรุงเทพ')) {
-        bankName = 'Bangkok Bank (กรุงเทพ)';
+        bankName = 'กรุงเทพ';
         bankColor = const Color(0xFF1E3A8A);
       } else if (fullLower.contains('kept')) {
-        bankName = 'Kept by krungsri';
+        bankName = 'กรุงศรี';
         bankColor = const Color(0xFF0075FF);
       } else if (fullLower.contains('mymo') || fullText.contains('ออมสิน')) {
-        bankName = 'GSB MyMo (ออมสิน)';
+        bankName = 'ออมสิน';
         bankColor = const Color(0xFFEB198B);
       } else if (fullLower.contains('shopee')) {
-        bankName = 'ShopeePay';
+        bankName = 'ช้อปปี้เพย์';
         bankColor = const Color(0xFFEE4D2D);
       }
 
@@ -652,28 +546,28 @@ class SlipParserService {
           bankName = 'MAKE by KBank';
           bankColor = const Color(0xFF00A9E0);
         } else if (albumLower.contains('scb')) {
-          bankName = 'SCB EASY (ไทยพาณิชย์)';
+          bankName = 'ไทยพาณิชย์';
           bankColor = const Color(0xFF4E2A84);
         } else if (albumLower.contains('krungthai') || albumLower.contains('next')) {
-          bankName = 'Krungthai NEXT (กรุงไทย)';
+          bankName = 'กรุงไทย';
           bankColor = const Color(0xFF00A3E0);
         } else if (albumLower.contains('k plus') || albumLower.contains('kplus') || albumLower.contains('kbank')) {
-          bankName = 'K PLUS (กสิกรไทย)';
+          bankName = 'กสิกรไทย';
           bankColor = const Color(0xFF138F46);
         } else if (albumLower.contains('baac')) {
-          bankName = 'BAAC (ธ.ก.ส.)';
+          bankName = 'ธ.ก.ส.';
           bankColor = const Color(0xFF006633);
         } else if (albumLower.contains('ttb')) {
-          bankName = 'ttb touch (ทีทีบี)';
+          bankName = 'ทีทีบี';
           bankColor = const Color(0xFF002D62);
         } else if (albumLower.contains('mymo') || albumLower.contains('gsb')) {
-          bankName = 'GSB MyMo (ออมสิน)';
+          bankName = 'ออมสิน';
           bankColor = const Color(0xFFEB198B);
         } else if (albumLower.contains('truemoney')) {
-          bankName = 'TrueMoney Wallet';
+          bankName = 'ทรูมันนี่ วอลเล็ท';
           bankColor = const Color(0xFFFA5A00);
         } else if (albumLower.contains('shopee')) {
-          bankName = 'ShopeePay';
+          bankName = 'ช้อปปี้เพย์';
           bankColor = const Color(0xFFEE4D2D);
         }
       }
@@ -729,13 +623,23 @@ class SlipParserService {
       final finalRef = refFromQR ??
           'REF-${path.hashCode.abs()}-${finalAmount.toStringAsFixed(2)}';
 
+      DateTime slipDate = assetDateTime ?? DateTime.now();
+      if (assetDateTime == null) {
+        try {
+          final file = File(path);
+          if (await file.exists()) {
+            slipDate = await file.lastModified();
+          }
+        } catch (_) {}
+      }
+
       return ExpenseCardItem(
         id: 'slip-${(refFromQR ?? path).hashCode.abs()}',
         receiverName: receiver.isNotEmpty
             ? receiver
             : (note ?? 'รายการโอนเงิน ($bankName)'),
         amount: finalAmount > 0 ? finalAmount : 100.0, // fallback if QR verified
-        dateTime: assetDateTime ?? DateTime.now(),
+        dateTime: slipDate,
         bankName: bankName,
         bankColor: bankColor,
         referenceNo: finalRef,
@@ -782,6 +686,8 @@ class SlipParserService {
       textRecognizer.close();
     }
 
-  return parsedItems;
+    // Sort chronologically: newest first
+    parsedItems.sort((a, b) => b.dateTime.compareTo(a.dateTime));
+    return parsedItems;
   }
 }

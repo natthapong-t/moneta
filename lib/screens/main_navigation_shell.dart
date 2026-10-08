@@ -33,6 +33,8 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
   // Background Scanning State
   final _slipParser = SlipParserService();
   bool _isBackgroundScanning = false;
+  bool _isScanBannerMinimized = false;
+  int _scanFoundCount = 0;
   String _scanningStatus = '';
   StreamSubscription<SlipScanProgress>? _scanSubscription;
 
@@ -78,6 +80,10 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
       if (mounted) {
         setState(() {
           _isLoading = false;
+        });
+        // MeowJot style: auto-scan incremental new slips silently in background on launch
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _startBackgroundGalleryScan(isSilent: true);
         });
       }
     }
@@ -139,7 +145,8 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
 
     if (uniqueItems.isNotEmpty) {
       setState(() {
-        _pendingCards.insertAll(0, uniqueItems);
+        _pendingCards.addAll(uniqueItems);
+        _pendingCards.sort((a, b) => b.dateTime.compareTo(a.dateTime));
       });
       _saveAllData();
     }
@@ -175,7 +182,7 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
             SizedBox(width: 10),
             Expanded(
               child: Text(
-                'รีเซ็ตสำรับสลิปตัวอย่างใหม่ (Start Fresh) เรียบร้อย!',
+                'รีเซ็ตสลิปตัวอย่างใหม่เรียบร้อย!',
                 style: TextStyle(
                   color: AppColors.textPrimary,
                   fontWeight: FontWeight.bold,
@@ -249,18 +256,25 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
     ExpenseStorageService.instance.setMonthlyBudget(newBudget);
   }
 
-  /// Start background non-blocking gallery scan
-  Future<void> _startBackgroundGalleryScan() async {
+  /// Start background non-blocking gallery scan with persistent cache
+  Future<void> _startBackgroundGalleryScan({bool isSilent = false}) async {
     if (_isBackgroundScanning) return;
 
-    HapticFeedback.mediumImpact();
+    if (!isSilent) {
+      HapticFeedback.mediumImpact();
+    }
+
     setState(() {
       _isBackgroundScanning = true;
+      _isScanBannerMinimized = isSilent;
+      _scanFoundCount = 0;
       _scanningStatus = 'กำลังเตรียมค้นหาในคลังภาพ...';
     });
 
-    final processedRefs = await ExpenseStorageService.instance
-        .getProcessedReferenceNumbers();
+    final storage = ExpenseStorageService.instance;
+    final processedRefs = await storage.getProcessedReferenceNumbers();
+    final cachedAssetIds = await storage.getScannedAssetIds();
+
     final knownRefs = <String>{
       ...processedRefs,
       ..._pendingCards.map((p) => p.referenceNo).where((r) => r.isNotEmpty),
@@ -273,12 +287,23 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
           .where((p) => p.isNotEmpty),
     };
 
+    final Set<String> newlyScannedAssetIds = {};
+
     _scanSubscription?.cancel();
     _scanSubscription = _slipParser
         .streamGallerySlips(
           maxScan: null,
           knownReferenceNos: knownRefs,
           knownImagePaths: knownPaths,
+          knownAssetIds: cachedAssetIds,
+          onAssetScanned: (assetId, imagePath) {
+            newlyScannedAssetIds.add(assetId);
+            // Flush to persistent storage incrementally in batches of 25
+            if (newlyScannedAssetIds.length >= 25) {
+              storage.addScannedAssetIds(newlyScannedAssetIds);
+              newlyScannedAssetIds.clear();
+            }
+          },
         )
         .listen(
           (progress) {
@@ -288,6 +313,7 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
                       progress.currentSource!.isNotEmpty)
                   ? ' [${progress.currentSource}]'
                   : '';
+              _scanFoundCount = progress.foundCount;
               _scanningStatus =
                   'กำลังกวาดสลิป$albumHint... ${progress.scanned}/${progress.total} (พบ ${progress.foundCount} สลิป)';
 
@@ -301,7 +327,8 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
                 );
 
                 if (!alreadyInPending && !alreadyInCategorized) {
-                  _pendingCards.insert(0, newSlip);
+                  _pendingCards.add(newSlip);
+                  _pendingCards.sort((a, b) => b.dateTime.compareTo(a.dateTime));
                   HapticFeedback.lightImpact();
                 }
               }
@@ -312,31 +339,53 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
             }
 
             if (progress.isFinished) {
-              _finishBackgroundScan(progress.foundCount);
+              if (newlyScannedAssetIds.isNotEmpty) {
+                storage.addScannedAssetIds(newlyScannedAssetIds);
+                newlyScannedAssetIds.clear();
+              }
+              storage.setLastScanTime(DateTime.now());
+              _finishBackgroundScan(progress.foundCount, isSilent: isSilent);
             }
           },
           onError: (err) {
             debugPrint('Error during background scan: $err');
+            if (newlyScannedAssetIds.isNotEmpty) {
+              storage.addScannedAssetIds(newlyScannedAssetIds);
+              newlyScannedAssetIds.clear();
+            }
             if (mounted) {
               setState(() {
                 _isBackgroundScanning = false;
+                _isScanBannerMinimized = false;
                 _scanningStatus = '';
               });
             }
           },
           onDone: () {
+            if (newlyScannedAssetIds.isNotEmpty) {
+              storage.addScannedAssetIds(newlyScannedAssetIds);
+              newlyScannedAssetIds.clear();
+            }
+            storage.setLastScanTime(DateTime.now());
             if (mounted && _isBackgroundScanning) {
-              _finishBackgroundScan(0);
+              _finishBackgroundScan(0, isSilent: isSilent);
             }
           },
         );
   }
 
-  void _finishBackgroundScan(int found) {
+  void _finishBackgroundScan(int found, {bool isSilent = false}) {
     setState(() {
       _isBackgroundScanning = false;
+      _isScanBannerMinimized = false;
       _scanningStatus = '';
     });
+
+    if (isSilent && found == 0) {
+      // Quiet finish when auto-scanning on launch with no new slips
+      return;
+    }
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         backgroundColor: AppColors.surface,
@@ -392,11 +441,11 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
             ),
             content: Row(
               children: [
-                const Text('🪙', style: TextStyle(fontSize: 18)),
+                const Text('💰', style: TextStyle(fontSize: 18)),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'หยอดเหรียญรายรับ +฿${item.amount.toStringAsFixed(2)} เรียบร้อย!',
+                    'เพิ่มรายรับ +฿${item.amount.toStringAsFixed(2)} เรียบร้อย!',
                     style: const TextStyle(
                       color: AppColors.textPrimary,
                       fontWeight: FontWeight.bold,
@@ -448,7 +497,7 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
           IndexedStack(
             index: _currentIndex,
             children: [
-              // Tab 0: Dashboard (คลังหลวง)
+              // Tab 0: Dashboard (หน้าหลัก)
               DashboardScreen(
                 pendingCards: _pendingCards,
                 categorizedCards: _categorizedCards,
@@ -471,7 +520,7 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
                 onClearAllData: _onClearAllData,
               ),
 
-              // Tab 1: Swipe Feed (โต๊ะปัดสลิป)
+              // Tab 1: Swipe Feed (ปัดแยกสลิป)
               SwipeFeedScreen(
                 pendingCards: _pendingCards,
                 categorizedCards: _categorizedCards,
@@ -485,7 +534,7 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
                 onSkipLater: _onCardSkipLater,
               ),
 
-              // Tab 2: Ledger History (บันทึกคลัง & ปฏิทินรายวัน)
+              // Tab 2: Ledger History (ประวัติรายการ & ปฏิทิน)
               LedgerHistoryScreen(
                 transactions: _categorizedCards,
                 pendingCards: _pendingCards,
@@ -507,81 +556,167 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
             ],
           ),
 
-          // Top Floating Background Scanning Status Banner (if scanning)
+          // Top Floating Background Scanning Status Banner (Collapsible/Minimizable)
           if (_isBackgroundScanning)
-            Positioned(
+            AnimatedPositioned(
+              duration: const Duration(milliseconds: 250),
+              curve: Curves.easeOutCubic,
               top: 14,
-              left: 20,
+              left: _isScanBannerMinimized ? null : 20,
               right: 20,
               child: SafeArea(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 8,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.surface,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: AppColors.vaultQuadrigaShadow,
-                      width: 2.0,
-                    ),
-                    boxShadow: const [
-                      BoxShadow(
-                        color: AppColors.vaultQuadrigaShadow,
-                        offset: Offset(0, 3),
-                        blurRadius: 0,
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    children: [
-                      const SizedBox(
-                        width: 15,
-                        height: 15,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2.2,
-                          color: AppColors.vaultQuadriga,
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          _scanningStatus,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontSize: 11.5,
-                            fontWeight: FontWeight.w900,
-                            color: AppColors.textPrimary,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                      InkWell(
+                child: _isScanBannerMinimized
+                    ? GestureDetector(
                         onTap: () {
-                          _scanSubscription?.cancel();
+                          HapticFeedback.selectionClick();
                           setState(() {
-                            _isBackgroundScanning = false;
-                            _scanningStatus = '';
+                            _isScanBannerMinimized = false;
                           });
                         },
-                        borderRadius: BorderRadius.circular(12),
-                        child: const Padding(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 2,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 7,
                           ),
-                          child: Icon(
-                            Icons.close_rounded,
-                            size: 18,
-                            color: AppColors.textSecondary,
+                          decoration: BoxDecoration(
+                            color: AppColors.surface,
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: AppColors.vaultQuadrigaShadow,
+                              width: 2.0,
+                            ),
+                            boxShadow: const [
+                              BoxShadow(
+                                color: AppColors.vaultQuadrigaShadow,
+                                offset: Offset(0, 3),
+                                blurRadius: 0,
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const SizedBox(
+                                width: 13,
+                                height: 13,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2.2,
+                                  color: AppColors.vaultQuadriga,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                _scanFoundCount > 0
+                                    ? '⚡ พบ $_scanFoundCount ใบ'
+                                    : 'กวาดสลิป...',
+                                style: const TextStyle(
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.w900,
+                                  color: AppColors.textPrimary,
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              const Icon(
+                                Icons.open_in_full_rounded,
+                                size: 13,
+                                color: AppColors.textSecondary,
+                              ),
+                            ],
                           ),
                         ),
+                      )
+                    : Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.surface,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: AppColors.vaultQuadrigaShadow,
+                            width: 2.0,
+                          ),
+                          boxShadow: const [
+                            BoxShadow(
+                              color: AppColors.vaultQuadrigaShadow,
+                              offset: Offset(0, 3),
+                              blurRadius: 0,
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          children: [
+                            const SizedBox(
+                              width: 15,
+                              height: 15,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2.2,
+                                color: AppColors.vaultQuadriga,
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                _scanningStatus,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.w900,
+                                  color: AppColors.textPrimary,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            // Minimize button
+                            InkWell(
+                              onTap: () {
+                                HapticFeedback.selectionClick();
+                                setState(() {
+                                  _isScanBannerMinimized = true;
+                                });
+                              },
+                              borderRadius: BorderRadius.circular(12),
+                              child: const Padding(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 5,
+                                  vertical: 3,
+                                ),
+                                child: Icon(
+                                  Icons.expand_less_rounded,
+                                  size: 20,
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 2),
+                            // Cancel button
+                            InkWell(
+                              onTap: () {
+                                _scanSubscription?.cancel();
+                                setState(() {
+                                  _isBackgroundScanning = false;
+                                  _isScanBannerMinimized = false;
+                                  _scanningStatus = '';
+                                });
+                              },
+                              borderRadius: BorderRadius.circular(12),
+                              child: const Padding(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 5,
+                                  vertical: 3,
+                                ),
+                                child: Icon(
+                                  Icons.close_rounded,
+                                  size: 18,
+                                  color: Color(0xFFEF4444),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ],
-                  ),
-                ),
               ),
             ),
 

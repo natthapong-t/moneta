@@ -366,7 +366,7 @@ class DashboardScreen extends StatelessWidget {
                             Text(
                               pendingCards.isNotEmpty
                                   ? 'ปัดเข้า 4 มุมเพื่อบันทึกหมวดหมู่'
-                                  : 'ยอดเยี่ยมมาก! ไม่มีสลิปค้างในสำรับ',
+                                  : 'ยอดเยี่ยมมาก! ไม่มีสลิปค้างรอคัดแยก',
                               style: const TextStyle(
                                 fontSize: 11.5,
                                 color: AppColors.textSecondary,
@@ -394,7 +394,7 @@ class DashboardScreen extends StatelessWidget {
                           vertical: 9,
                         ),
                         child: Text(
-                          pendingCards.isNotEmpty ? 'เริ่มปัด ⚡' : 'ดูสำรับ',
+                          pendingCards.isNotEmpty ? 'เริ่มปัด ⚡' : 'ดูรายการ',
                           style: TextStyle(
                             fontSize: 12.5,
                             fontWeight: FontWeight.w900,
@@ -626,7 +626,7 @@ class DashboardScreen extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     const Text(
-                      'รายการที่เพิ่งคัดแยก (Recent Items)',
+                      'รายการที่เพิ่งคัดแยก',
                       style: TextStyle(
                         fontSize: 14.5,
                         fontWeight: FontWeight.bold,
@@ -793,7 +793,7 @@ class DashboardScreen extends StatelessWidget {
             const SizedBox(width: 12),
             const Expanded(
               child: Text(
-                'เริ่มต้นใหม่ (Start Fresh)',
+                'รีเซ็ตข้อมูล',
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w900,

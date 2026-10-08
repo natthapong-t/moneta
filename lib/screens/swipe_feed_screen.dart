@@ -46,7 +46,6 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
   late List<ExpenseCardItem> _pendingCards;
   final List<ExpenseCardItem> _categorizedCards = [];
   CornerPosition? _hoveredCorner;
-  int _laterHoverSide = 0; // -1 = left, 1 = right, 0 = none
 
   final Map<String, double> _categoryTotals = {
     'food': 0.0,
@@ -144,7 +143,7 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
                   ),
                 ),
                 title: const Text(
-                  'กวาดหาสลิปในเครื่องอัตโนมัติ (Auto-Scan)',
+                  'กวาดหาสลิปในเครื่องอัตโนมัติ',
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
@@ -152,7 +151,7 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
                   ),
                 ),
                 subtitle: const Text(
-                  'ขอสิทธิ์คลังภาพ และค้นหาเฉพาะรูปที่เป็นสลิปเข้าสู่สำรับทันที',
+                  'ขอสิทธิ์คลังภาพ และค้นหาเฉพาะรูปที่เป็นสลิปเข้ามาคัดแยกทันที',
                   style: TextStyle(
                     fontSize: 11,
                     color: AppColors.textSecondary,
@@ -193,7 +192,7 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
                   ),
                 ),
                 title: const Text(
-                  'เลือกรูปสลิปจากอัลบั้มด้วยตนเอง (Manual Pick)',
+                  'เลือกรูปสลิปจากอัลบั้มด้วยตนเอง',
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
@@ -600,74 +599,14 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
   void _skipTopCardToLater() {
     if (_pendingCards.isEmpty) return;
 
-    HapticFeedback.mediumImpact();
+    HapticFeedback.lightImpact();
     final skippedItem = _pendingCards.removeAt(0);
     setState(() {
       _pendingCards.add(skippedItem);
-      _laterHoverSide = 0;
       _hoveredCorner = null;
     });
 
     widget.onSkipLater?.call();
-
-    if (mounted) {
-      ScaffoldMessenger.of(context).hideCurrentSnackBar();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          backgroundColor: AppColors.surface,
-          behavior: SnackBarBehavior.floating,
-          duration: const Duration(seconds: 2),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-            side: const BorderSide(color: Color(0xFFD97706), width: 2.0),
-          ),
-          content: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFEF3C7),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: const Color(0xFFD97706), width: 1.5),
-                ),
-                child: const Icon(
-                  Icons.schedule_rounded,
-                  color: Color(0xFFD97706),
-                  size: 18,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'พักสลิปนี้ไว้จัดการทีหลัง',
-                      style: TextStyle(
-                        color: AppColors.textPrimary,
-                        fontWeight: FontWeight.w900,
-                        fontSize: 13,
-                      ),
-                    ),
-                    Text(
-                      '${skippedItem.receiverName} (${NumberFormat('#,##0.00', 'th_TH').format(skippedItem.amount)} ฿) ข้ามไปท้ายคิว',
-                      style: const TextStyle(
-                        color: AppColors.textSecondary,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 11,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
   }
 
   void _undoLastAction() {
@@ -985,27 +924,7 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
               ),
             ),
 
-            // Left Lateral Drag-out Target (Only shown when dragging left to later)
-            if (_pendingCards.isNotEmpty && _laterHoverSide == -1)
-              Positioned(
-                left: 6,
-                top: 260,
-                bottom: 260,
-                child: Center(
-                  child: _buildSideDropZone(isLeft: true),
-                ),
-              ),
 
-            // Right Lateral Drag-out Target (Only shown when dragging right to later)
-            if (_pendingCards.isNotEmpty && _laterHoverSide == 1)
-              Positioned(
-                right: 6,
-                top: 260,
-                bottom: 260,
-                child: Center(
-                  child: _buildSideDropZone(isLeft: false),
-                ),
-              ),
 
             // Center Arena Card Stack: Positioned smoothly between vaults
             Positioned.fill(
@@ -1142,74 +1061,9 @@ class _SwipeFeedScreenState extends State<SwipeFeedScreen> {
               _hoveredCorner = corner;
             });
           },
-          onLaterSideChanged: (side) {
-            if (_laterHoverSide != side) {
-              setState(() {
-                _laterHoverSide = side;
-              });
-            }
-          },
-          onSkipLater: _skipTopCardToLater,
           onCategorized: (corner) {
             _onCardCategorized(item, corner);
           },
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSideDropZone({required bool isLeft}) {
-    return GestureDetector(
-      onTap: _pendingCards.isEmpty ? null : _skipTopCardToLater,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        curve: Curves.easeOutCubic,
-        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 14),
-        decoration: BoxDecoration(
-          color: const Color(0xFFFEF3C7),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: const Color(0xFFD97706),
-            width: 2.2,
-          ),
-          boxShadow: const [
-            BoxShadow(
-              color: Color(0xFFB45309),
-              offset: Offset(0, 3.5),
-              blurRadius: 0,
-            ),
-          ],
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              isLeft
-                  ? Icons.keyboard_double_arrow_left_rounded
-                  : Icons.keyboard_double_arrow_right_rounded,
-              size: 20,
-              color: const Color(0xFFB45309),
-            ),
-            const SizedBox(height: 6),
-            RotatedBox(
-              quarterTurns: isLeft ? 3 : 1,
-              child: const Text(
-                'ปล่อยเพื่อพัก',
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w900,
-                  color: Color(0xFF92400E),
-                  letterSpacing: 0.5,
-                ),
-              ),
-            ),
-            const SizedBox(height: 6),
-            const Icon(
-              Icons.schedule_rounded,
-              size: 16,
-              color: Color(0xFFB45309),
-            ),
-          ],
         ),
       ),
     );
