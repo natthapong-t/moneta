@@ -16,7 +16,9 @@ import Vision
 
   func didInitializeImplicitFlutterEngine(_ engineBridge: FlutterImplicitEngineBridge) {
     GeneratedPluginRegistrant.register(with: engineBridge.pluginRegistry)
-    AppleVisionPlugin.register(with: engineBridge.pluginRegistry.registrar(forPlugin: "AppleVisionPlugin"))
+    if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "AppleVisionPlugin") {
+      AppleVisionPlugin.register(with: registrar)
+    }
   }
 }
 
