@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_mlkit_barcode_scanning/google_mlkit_barcode_scanning.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'package:image_picker/image_picker.dart';
@@ -32,6 +33,8 @@ class SlipScanProgress {
 }
 
 class SlipParserService {
+  static const MethodChannel _appleVisionChannel = MethodChannel('moneta/apple_vision');
+
   // Official Bank Identification Codes in Thailand (BOT / PromptPay EMVCo)
   static const Map<String, ThaiBankInfo> bankCodeMap = {
     '004': ThaiBankInfo(name: 'กสิกรไทย', color: Color(0xFF138F46)),
@@ -178,8 +181,11 @@ class SlipParserService {
         ? maxScan
         : totalAssets;
 
-    final barcodeScanner = BarcodeScanner(formats: [BarcodeFormat.qrCode]);
-    final textRecognizer = TextRecognizer(script: TextRecognitionScript.latin);
+    final bool isIOS = Platform.isIOS;
+    final BarcodeScanner? barcodeScanner =
+        isIOS ? null : BarcodeScanner(formats: [BarcodeFormat.qrCode]);
+    final TextRecognizer? textRecognizer =
+        isIOS ? null : TextRecognizer(script: TextRecognitionScript.latin);
 
     int scannedSoFar = 0;
     int foundCount = 0;
@@ -272,8 +278,8 @@ class SlipParserService {
         );
       }
     } finally {
-      barcodeScanner.close();
-      textRecognizer.close();
+      barcodeScanner?.close();
+      textRecognizer?.close();
     }
   }
 
@@ -442,25 +448,56 @@ class SlipParserService {
       return null;
     }
 
-    final bool ownsScanner = scanner == null;
-    final bool ownsRecognizer = recognizer == null;
+    final bool isIOS = Platform.isIOS;
+    List<String> qrCodes = [];
+    String fullText = '';
 
-    final barcodeScanner = scanner ?? BarcodeScanner(formats: [BarcodeFormat.qrCode]);
-    final textRecognizer = recognizer ?? TextRecognizer(script: TextRecognitionScript.latin);
+    // 1. On iOS, process via Apple Vision Framework on Apple Neural Engine
+    if (isIOS) {
+      try {
+        final Map? res = await _appleVisionChannel.invokeMethod<Map>('recognizeSlip', {
+          'filePath': path,
+        });
+        if (res != null) {
+          qrCodes = (res['qrCodes'] as List?)?.map((e) => e.toString()).toList() ?? [];
+          fullText = (res['text'] as String?) ?? '';
+        }
+      } catch (e) {
+        debugPrint('Apple Vision error on iOS, attempting ML Kit fallback: $e');
+      }
+    }
+
+    // 2. On Android or as fallback if Vision returns empty on iOS
+    if (!isIOS || (qrCodes.isEmpty && fullText.isEmpty)) {
+      final bool ownsScanner = scanner == null;
+      final bool ownsRecognizer = recognizer == null;
+
+      final barcodeScanner = scanner ?? BarcodeScanner(formats: [BarcodeFormat.qrCode]);
+      final textRecognizer = recognizer ?? TextRecognizer(script: TextRecognitionScript.latin);
+
+      try {
+        final inputImage = InputImage.fromFilePath(path);
+        final barcodes = await barcodeScanner.processImage(inputImage);
+        qrCodes = barcodes.map((b) => b.rawValue).whereType<String>().toList();
+
+        final recognizedText = await textRecognizer.processImage(inputImage);
+        fullText = recognizedText.text;
+      } catch (e) {
+        debugPrint('ML Kit error reading image at $path: $e');
+        return null;
+      } finally {
+        if (ownsScanner) barcodeScanner.close();
+        if (ownsRecognizer) textRecognizer.close();
+      }
+    }
 
     try {
-      final inputImage = InputImage.fromFilePath(path);
-
-      // 1. Scan QR code (Bank of Thailand PromptPay Mini-QR / BScanC)
-      final barcodes = await barcodeScanner.processImage(inputImage);
+      // 3. Scan QR code (Bank of Thailand PromptPay Mini-QR / BScanC)
       String? detectedBankCode;
       String? refFromQR;
       bool isPromptPaySlipQR = false;
 
-      for (final barcode in barcodes) {
-        final raw = barcode.rawValue;
-        if (raw == null) continue;
-
+      for (final raw in qrCodes) {
         // Thai Bank Slip QR signature
         if (raw.contains('000001') || raw.startsWith('003') || raw.startsWith('004') || raw.startsWith('005')) {
           final topLevelTLV = parseEMVCoTLV(raw);
@@ -476,11 +513,7 @@ class SlipParserService {
         }
       }
 
-      // 2. OCR Text Recognition
-      final RecognizedText recognizedText = await textRecognizer.processImage(inputImage);
-      final fullText = recognizedText.text;
-
-      // Extract details
+      // 4. Extract details from OCR text
       final double? amount = extractAmountFromText(fullText);
       final String receiver = extractReceiverName(fullText);
       final String? note = extractNote(fullText);
@@ -649,9 +682,6 @@ class SlipParserService {
     } catch (e) {
       debugPrint('Error parsing slip at $path: $e');
       return null;
-    } finally {
-      if (ownsScanner) barcodeScanner.close();
-      if (ownsRecognizer) textRecognizer.close();
     }
   }
 
@@ -661,8 +691,11 @@ class SlipParserService {
     void Function(int current, int total, int found)? onProgress,
   }) async {
     final List<ExpenseCardItem> parsedItems = [];
-    final barcodeScanner = BarcodeScanner(formats: [BarcodeFormat.qrCode]);
-    final textRecognizer = TextRecognizer(script: TextRecognitionScript.latin);
+    final bool isIOS = Platform.isIOS;
+    final BarcodeScanner? barcodeScanner =
+        isIOS ? null : BarcodeScanner(formats: [BarcodeFormat.qrCode]);
+    final TextRecognizer? textRecognizer =
+        isIOS ? null : TextRecognizer(script: TextRecognitionScript.latin);
 
     try {
       for (int i = 0; i < imagePaths.length; i++) {
@@ -682,8 +715,8 @@ class SlipParserService {
         }
       }
     } finally {
-      barcodeScanner.close();
-      textRecognizer.close();
+      barcodeScanner?.close();
+      textRecognizer?.close();
     }
 
     // Sort chronologically: newest first
