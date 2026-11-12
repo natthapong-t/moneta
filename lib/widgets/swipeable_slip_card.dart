@@ -195,8 +195,26 @@ class _SwipeableSlipCardState extends State<SwipeableSlipCard>
       );
     }
 
+    bool hasValidImage = false;
     if (widget.item.imagePath != null && widget.item.imagePath!.isNotEmpty) {
-      return _buildActualSlipImageCard(activeCat, currencyFormatter);
+      final path = widget.item.imagePath!;
+      if (path.startsWith('assets/')) {
+        hasValidImage = true;
+      } else {
+        try {
+          hasValidImage = File(path).existsSync();
+        } catch (_) {
+          hasValidImage = false;
+        }
+      }
+    }
+
+    if (hasValidImage) {
+      return _buildActualSlipImageCard(
+        activeCat,
+        currencyFormatter,
+        dateFormatter,
+      );
     }
 
     return _buildSyntheticFallbackCard(
@@ -209,6 +227,7 @@ class _SwipeableSlipCardState extends State<SwipeableSlipCard>
   Widget _buildActualSlipImageCard(
     ExpenseCategory? activeCat,
     NumberFormat currencyFormatter,
+    DateFormat dateFormatter,
   ) {
     return Container(
       width: 245,
@@ -237,12 +256,21 @@ class _SwipeableSlipCardState extends State<SwipeableSlipCard>
             // 1. The Actual Slip Image (Rendered directly)
             Positioned.fill(
               child: Container(
-                color: const Color(0xFFF1F5F9),
-                child: Center(child: _buildSlipImage(widget.item.imagePath!)),
+                color: AppColors.surfaceElevated,
+                child: Center(
+                  child: _buildSlipImage(
+                    widget.item.imagePath!,
+                    fallback: _buildSyntheticFallbackCard(
+                      currencyFormatter,
+                      dateFormatter,
+                      activeCat,
+                    ),
+                  ),
+                ),
               ),
             ),
 
-            // 2. Floating Amount Pill (Top Right) - Arcade 3D Gold Badge
+            // 2. Floating Amount Pill (Top Right) - Mintio Indigo 3D Badge
             Positioned(
               top: 10,
               right: 10,
@@ -252,12 +280,12 @@ class _SwipeableSlipCardState extends State<SwipeableSlipCard>
                   vertical: 4,
                 ),
                 decoration: BoxDecoration(
-                  color: AppColors.gold,
+                  color: AppColors.mintioIndigo,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppColors.goldShadow, width: 2.0),
+                  border: Border.all(color: const Color(0xFF3B48D8), width: 2.0),
                   boxShadow: const [
                     BoxShadow(
-                      color: AppColors.goldShadow,
+                      color: Color(0xFF3B48D8),
                       offset: Offset(0, 2),
                       blurRadius: 0,
                     ),
@@ -268,7 +296,7 @@ class _SwipeableSlipCardState extends State<SwipeableSlipCard>
                   style: const TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w900,
-                    color: Color(0xFF1E293B),
+                    color: Colors.white,
                     letterSpacing: 0.3,
                   ),
                 ),
@@ -346,7 +374,7 @@ class _SwipeableSlipCardState extends State<SwipeableSlipCard>
                       const Icon(
                         Icons.edit_note_rounded,
                         size: 15,
-                        color: AppColors.goldShadow,
+                        color: AppColors.mintioIndigo,
                       ),
                       const SizedBox(width: 6),
                       Expanded(
@@ -449,34 +477,36 @@ class _SwipeableSlipCardState extends State<SwipeableSlipCard>
       );
     }
 
-  Widget _buildSlipImage(String path) {
+  Widget _buildSlipImage(String path, {Widget? fallback}) {
     final isAsset = path.startsWith('assets/');
     if (isAsset) {
       return Image.asset(
         path,
         fit: BoxFit.contain,
         filterQuality: FilterQuality.medium,
-        errorBuilder: (ctx, err, stack) => _buildImageError(),
+        errorBuilder: (ctx, err, stack) => fallback ?? _buildImageError(),
       );
     }
     return Image.file(
       File(path),
       fit: BoxFit.contain,
       filterQuality: FilterQuality.medium,
-      errorBuilder: (ctx, err, stack) => _buildImageError(),
+      errorBuilder: (ctx, err, stack) => fallback ?? _buildImageError(),
     );
   }
 
   Widget _buildImageError() {
-    return const Center(
-      child: Column(
+    return Container(
+      color: AppColors.surfaceElevated,
+      alignment: Alignment.center,
+      child: const Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.broken_image_rounded, size: 40, color: Colors.white38),
-          SizedBox(height: 8),
+          Icon(Icons.receipt_long_rounded, size: 36, color: AppColors.textSecondary),
+          SizedBox(height: 6),
           Text(
-            'ไม่สามารถแสดงรูปสลิปได้',
-            style: TextStyle(color: Colors.white54, fontSize: 11),
+            'ไม่สามารถโหลดไฟล์รูปสลิปได้',
+            style: TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.bold),
           ),
         ],
       ),
@@ -624,11 +654,13 @@ class _SwipeableSlipCardState extends State<SwipeableSlipCard>
                         const SizedBox(height: 2),
                         Text(
                           '฿ ${currencyFormatter.format(widget.item.amount)}',
-                          style: const TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.w900,
-                            color: AppColors.textPrimary,
-                            letterSpacing: -0.5,
+                          style: AppTheme.tabularFigures(
+                            base: const TextStyle(
+                              fontSize: 26,
+                              fontWeight: FontWeight.w900,
+                              color: AppColors.textPrimary,
+                              letterSpacing: -0.5,
+                            ),
                           ),
                         ),
                       ],
