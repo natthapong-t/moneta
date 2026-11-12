@@ -50,6 +50,7 @@ class _MonetaSanctumHeroState extends State<MonetaSanctumHero>
   bool _isCustomSpeech = false;
   int _speechTapCount = 0;
   bool _gooseHonking = false;
+  bool _goddessJumping = false;
 
   final List<String> _idleQuotes = [
     'เหรียญทุกเหรียญที่เจ้าประหยัด คืออิสรภาพในอนาคต 🏛️',
@@ -69,10 +70,11 @@ class _MonetaSanctumHeroState extends State<MonetaSanctumHero>
   @override
   void initState() {
     super.initState();
+    // 4-frame retro idle animation cycle (350ms per frame, 1400ms loop)
     _animCtrl = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 2400),
-    )..repeat(reverse: true);
+      duration: const Duration(milliseconds: 1400),
+    )..repeat();
 
     _updateDefaultSpeech();
   }
@@ -119,9 +121,14 @@ class _MonetaSanctumHeroState extends State<MonetaSanctumHero>
   void _onTapGoddess() {
     HapticFeedback.lightImpact();
     setState(() {
+      _goddessJumping = true;
       _isCustomSpeech = true;
       _speechTapCount++;
       _activeSpeech = _idleQuotes[_speechTapCount % _idleQuotes.length];
+    });
+
+    Future.delayed(const Duration(milliseconds: 320), () {
+      if (mounted) setState(() => _goddessJumping = false);
     });
   }
 
@@ -134,7 +141,7 @@ class _MonetaSanctumHeroState extends State<MonetaSanctumHero>
       _speechTapCount++;
     });
 
-    Future.delayed(const Duration(milliseconds: 1500), () {
+    Future.delayed(const Duration(milliseconds: 1600), () {
       if (mounted) {
         setState(() => _gooseHonking = false);
       }
@@ -285,40 +292,42 @@ class _MonetaSanctumHeroState extends State<MonetaSanctumHero>
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        // The Sacred Goose
+                        // The Sacred Goose (16-bit retro frame idle)
                         GestureDetector(
                           onTap: _onTapGoose,
                           child: AnimatedBuilder(
                             animation: _animCtrl,
-                            builder: (context, child) {
-                              final bounce =
-                                  sin(_animCtrl.value * pi * 2) * 1.5;
-                              return Transform.translate(
-                                offset: Offset(0, _gooseHonking ? -4 : bounce),
-                                child: child,
+                            builder: (context, _) {
+                              final frame =
+                                  (_animCtrl.value * 4).floor() % 4;
+                              return SacredGoosePixelWidget(
+                                size: 40,
+                                action: _gooseHonking
+                                    ? GooseAction.honking
+                                    : GooseAction.idle,
+                                frameIndex: frame,
                               );
                             },
-                            child: const SacredGoosePixelWidget(size: 40),
                           ),
                         ),
                         const SizedBox(width: 4),
-                        // Goddess Moneta
+                        // Goddess Moneta (16-bit retro frame idle)
                         GestureDetector(
                           onTap: _onTapGoddess,
                           child: AnimatedBuilder(
                             animation: _animCtrl,
-                            builder: (context, child) {
-                              final floatOffset =
-                                  sin(_animCtrl.value * pi * 2) * 2.5;
+                            builder: (context, _) {
+                              final frame =
+                                  (_animCtrl.value * 4).floor() % 4;
                               return Transform.translate(
-                                offset: Offset(0, floatOffset),
-                                child: child,
+                                offset: Offset(0, _goddessJumping ? -3 : 0),
+                                child: MonetaGoddessPixelWidget(
+                                  size: 62,
+                                  mood: mood,
+                                  frameIndex: frame,
+                                ),
                               );
                             },
-                            child: MonetaGoddessPixelWidget(
-                              size: 62,
-                              mood: mood,
-                            ),
                           ),
                         ),
                       ],
@@ -384,11 +393,13 @@ class _MonetaSanctumHeroState extends State<MonetaSanctumHero>
 class MonetaGoddessPixelWidget extends StatefulWidget {
   final double size;
   final GoddessMood mood;
+  final int? frameIndex;
 
   const MonetaGoddessPixelWidget({
     super.key,
     this.size = 100,
     this.mood = GoddessMood.idle,
+    this.frameIndex,
   });
 
   @override
@@ -397,13 +408,22 @@ class MonetaGoddessPixelWidget extends StatefulWidget {
 }
 
 class _MonetaGoddessPixelWidgetState extends State<MonetaGoddessPixelWidget>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
+  late AnimationController _idleAnimController;
   late AnimationController _blinkController;
   bool _isBlinking = false;
 
   @override
   void initState() {
     super.initState();
+    _idleAnimController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1400),
+    );
+    if (widget.frameIndex == null) {
+      _idleAnimController.repeat();
+    }
+
     _blinkController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 4),
@@ -422,45 +442,137 @@ class _MonetaGoddessPixelWidgetState extends State<MonetaGoddessPixelWidget>
   }
 
   @override
+  void didUpdateWidget(covariant MonetaGoddessPixelWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.frameIndex == null && !_idleAnimController.isAnimating) {
+      _idleAnimController.repeat();
+    } else if (widget.frameIndex != null && _idleAnimController.isAnimating) {
+      _idleAnimController.stop();
+    }
+  }
+
+  @override
   void dispose() {
+    _idleAnimController.dispose();
     _blinkController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: widget.size,
-      height: widget.size * (26 / 20),
-      child: CustomPaint(
-        painter: GoddessPixelPainter(
-          mood: widget.mood,
-          isBlinking: _isBlinking,
+    if (widget.frameIndex != null) {
+      return SizedBox(
+        width: widget.size,
+        height: widget.size * (27 / 20),
+        child: CustomPaint(
+          painter: GoddessPixelPainter(
+            mood: widget.mood,
+            isBlinking: _isBlinking,
+            frameIndex: widget.frameIndex!,
+          ),
         ),
-      ),
+      );
+    }
+
+    return AnimatedBuilder(
+      animation: _idleAnimController,
+      builder: (context, _) {
+        final frame = (_idleAnimController.value * 4).floor() % 4;
+        return SizedBox(
+          width: widget.size,
+          height: widget.size * (27 / 20),
+          child: CustomPaint(
+            painter: GoddessPixelPainter(
+              mood: widget.mood,
+              isBlinking: _isBlinking,
+              frameIndex: frame,
+            ),
+          ),
+        );
+      },
     );
   }
 }
 
 /// Standalone Pixel Art Widget of The Sacred Roman Goose
-class SacredGoosePixelWidget extends StatelessWidget {
+class SacredGoosePixelWidget extends StatefulWidget {
   final double size;
   final GooseAction action;
+  final int? frameIndex;
 
   const SacredGoosePixelWidget({
     super.key,
     this.size = 60,
     this.action = GooseAction.idle,
+    this.frameIndex,
   });
 
   @override
+  State<SacredGoosePixelWidget> createState() => _SacredGoosePixelWidgetState();
+}
+
+class _SacredGoosePixelWidgetState extends State<SacredGoosePixelWidget>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _idleAnimController;
+
+  @override
+  void initState() {
+    super.initState();
+    _idleAnimController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1400),
+    );
+    if (widget.frameIndex == null) {
+      _idleAnimController.repeat();
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant SacredGoosePixelWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.frameIndex == null && !_idleAnimController.isAnimating) {
+      _idleAnimController.repeat();
+    } else if (widget.frameIndex != null && _idleAnimController.isAnimating) {
+      _idleAnimController.stop();
+    }
+  }
+
+  @override
+  void dispose() {
+    _idleAnimController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: size,
-      height: size,
-      child: CustomPaint(
-        painter: GoosePixelPainter(action: action),
-      ),
+    if (widget.frameIndex != null) {
+      return SizedBox(
+        width: widget.size,
+        height: widget.size,
+        child: CustomPaint(
+          painter: GoosePixelPainter(
+            action: widget.action,
+            frameIndex: widget.frameIndex!,
+          ),
+        ),
+      );
+    }
+
+    return AnimatedBuilder(
+      animation: _idleAnimController,
+      builder: (context, _) {
+        final frame = (_idleAnimController.value * 4).floor() % 4;
+        return SizedBox(
+          width: widget.size,
+          height: widget.size,
+          child: CustomPaint(
+            painter: GoosePixelPainter(
+              action: widget.action,
+              frameIndex: frame,
+            ),
+          ),
+        );
+      },
     );
   }
 }
@@ -491,10 +603,12 @@ class SacredGoosePixelWidget extends StatelessWidget {
 class GoddessPixelPainter extends CustomPainter {
   final GoddessMood mood;
   final bool isBlinking;
+  final int frameIndex; // 0, 1, 2, 3
 
   const GoddessPixelPainter({
     required this.mood,
     required this.isBlinking,
+    this.frameIndex = 0,
   });
 
   static const List<List<int>> baseGrid = [
@@ -554,7 +668,7 @@ class GoddessPixelPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    const rows = 26;
+    const rows = 27;
     const cols = 20;
 
     final pixelSize = min(size.width / cols, size.height / rows);
@@ -563,9 +677,39 @@ class GoddessPixelPainter extends CustomPainter {
 
     final paint = Paint()..isAntiAlias = false;
 
-    // Draw base pixel grid
-    for (int r = 0; r < rows; r++) {
+    // 4-frame retro RPG idle:
+    // Frame 0: Neutral rest
+    // Frame 1: Inhale (head & chest rise 1px, hair curls sway out, coin lifts)
+    // Frame 2: Peak breath (coin spins/glints with sparkle, wreath glints, toga hem sways)
+    // Frame 3: Exhale settle (head returns, hair tips & toga folds follow through)
+    final int headShift = (frameIndex == 1 || frameIndex == 2) ? 0 : 1;
+
+    void drawPixel(int c, int targetY, Color col) {
+      if (c >= 0 && c < cols && targetY >= 0 && targetY < rows) {
+        paint.color = col;
+        canvas.drawRect(
+          Rect.fromLTWH(
+            offsetX + c * pixelSize,
+            offsetY + targetY * pixelSize,
+            pixelSize,
+            pixelSize,
+          ),
+          paint,
+        );
+      }
+    }
+
+    for (int r = 0; r < 26; r++) {
+      // Feet & lower robes (rows 16..25) stay grounded; head/shoulders (0..14) breathe
+      int targetY = r <= 14 ? (r + headShift) : (r + 1);
+
       for (int c = 0; c < cols; c++) {
+        // Skip default coin pixels on frames 1 & 2 so we can animate the coin flip/bob cleanly
+        final bool isCoinArea = (r >= 16 && r <= 19 && c >= 14);
+        if (isCoinArea && (frameIndex == 1 || frameIndex == 2)) {
+          continue;
+        }
+
         int colorIdx = baseGrid[r][c];
 
         // Dynamic Eye Expressions based on mood and blink
@@ -590,19 +734,84 @@ class GoddessPixelPainter extends CustomPainter {
           if (r == 7 && c == 15) colorIdx = 16;
         }
 
+        // Frame 2: Laurel wreath golden catchlight glint
+        if (frameIndex == 2 && r == 1 && (c == 4 || c == 15)) {
+          colorIdx = 9;
+        }
+
+        // Frame 3: Fibula brooch glint
+        if (frameIndex == 3 && r == 14 && c == 5) {
+          colorIdx = 9;
+        }
+
         if (colorIdx != 0 && palette.containsKey(colorIdx)) {
-          paint.color = palette[colorIdx]!;
-          canvas.drawRect(
-            Rect.fromLTWH(
-              offsetX + c * pixelSize,
-              offsetY + r * pixelSize,
-              pixelSize,
-              pixelSize,
-            ),
-            paint,
-          );
+          drawPixel(c, targetY, palette[colorIdx]!);
+          // Stretch neck/shoulder connection seamlessly when breathing up
+          if (r == 14 && headShift == 0) {
+            drawPixel(c, targetY + 1, palette[colorIdx]!);
+          }
         }
       }
+    }
+
+    // Frame-specific hair curls, toga breeze, and animated hand/coin
+    if (frameIndex == 1) {
+      // Hair side locks sway outward in the breeze
+      drawPixel(1, 6, palette[3]!);
+      drawPixel(1, 7, palette[3]!);
+      drawPixel(18, 6, palette[3]!);
+      drawPixel(18, 7, palette[3]!);
+
+      // Hand & Coin lifted 1px higher
+      drawPixel(14, 17, palette[6]!);
+      drawPixel(15, 17, palette[6]!);
+      drawPixel(14, 18, palette[6]!);
+      drawPixel(15, 18, palette[6]!);
+      // Lifted Gold Coin (full face)
+      drawPixel(17, 15, palette[14]!);
+      drawPixel(18, 15, palette[14]!);
+      drawPixel(16, 16, palette[14]!);
+      drawPixel(17, 16, palette[9]!); // Shine
+      drawPixel(18, 16, palette[15]!);
+      drawPixel(19, 16, palette[14]!);
+      drawPixel(16, 17, palette[14]!);
+      drawPixel(17, 17, palette[15]!);
+      drawPixel(18, 17, palette[15]!);
+      drawPixel(19, 17, palette[14]!);
+      drawPixel(17, 18, palette[14]!);
+      drawPixel(18, 18, palette[14]!);
+    } else if (frameIndex == 2) {
+      // Hair side locks + lower hair tips sway
+      drawPixel(1, 7, palette[3]!);
+      drawPixel(1, 8, palette[4]!);
+      drawPixel(18, 7, palette[3]!);
+      drawPixel(18, 8, palette[4]!);
+
+      // Toga hem ripples 1px to the right in the breeze
+      drawPixel(15, 21, palette[12]!);
+      drawPixel(15, 22, palette[12]!);
+
+      // Hand holding spinning coin (edge-on 2px spin with sparkle above!)
+      drawPixel(14, 17, palette[6]!);
+      drawPixel(15, 17, palette[6]!);
+      drawPixel(14, 18, palette[6]!);
+      drawPixel(15, 18, palette[6]!);
+      // Spinning narrow coin
+      drawPixel(17, 15, palette[9]!); // Bright top glint
+      drawPixel(18, 15, palette[14]!);
+      drawPixel(17, 16, palette[14]!);
+      drawPixel(18, 16, palette[15]!);
+      drawPixel(17, 17, palette[14]!);
+      drawPixel(18, 17, palette[15]!);
+      drawPixel(17, 18, palette[15]!);
+      drawPixel(18, 18, palette[14]!);
+      // Floating sparkle star above coin
+      drawPixel(18, 13, palette[9]!);
+    } else if (frameIndex == 3) {
+      // Secondary follow-through on lower hair locks & toga drape
+      drawPixel(2, 12, palette[4]!);
+      drawPixel(17, 12, palette[4]!);
+      drawPixel(15, 22, palette[12]!);
     }
 
     // Flame aura particles for streak flame mood
@@ -611,18 +820,23 @@ class GoddessPixelPainter extends CustomPainter {
         ..color = const Color(0xFFFF5722).withValues(alpha: 0.75)
         ..isAntiAlias = false;
 
-      // Small pixel flame embers
-      final flamePixels = [
-        Offset(offsetX + 1 * pixelSize, offsetY + 2 * pixelSize),
-        Offset(offsetX + 18 * pixelSize, offsetY + 3 * pixelSize),
-        Offset(offsetX + 0 * pixelSize, offsetY + 10 * pixelSize),
-        Offset(offsetX + 19 * pixelSize, offsetY + 12 * pixelSize),
-        Offset(offsetX + 17 * pixelSize, offsetY + 16 * pixelSize),
+      // 4 distinct retro flame ember animation frames
+      final flameFrames = [
+        [const Offset(1, 4), const Offset(18, 5), const Offset(0, 12), const Offset(19, 14)],
+        [const Offset(1, 2), const Offset(18, 3), const Offset(0, 10), const Offset(19, 12), const Offset(17, 16)],
+        [const Offset(2, 1), const Offset(17, 2), const Offset(1, 8), const Offset(18, 10), const Offset(16, 15)],
+        [const Offset(1, 3), const Offset(18, 4), const Offset(0, 11), const Offset(19, 13)],
       ];
 
-      for (final p in flamePixels) {
+      final currentFlames = flameFrames[frameIndex % flameFrames.length];
+      for (final p in currentFlames) {
         canvas.drawRect(
-          Rect.fromLTWH(p.dx, p.dy, pixelSize * 1.2, pixelSize * 1.2),
+          Rect.fromLTWH(
+            offsetX + p.dx * pixelSize,
+            offsetY + p.dy * pixelSize,
+            pixelSize * 1.2,
+            pixelSize * 1.2,
+          ),
           auraPaint,
         );
       }
@@ -631,25 +845,21 @@ class GoddessPixelPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant GoddessPixelPainter oldDelegate) {
-    return oldDelegate.mood != mood || oldDelegate.isBlinking != isBlinking;
+    return oldDelegate.mood != mood ||
+        oldDelegate.isBlinking != isBlinking ||
+        oldDelegate.frameIndex != frameIndex;
   }
 }
 
-/// 16 x 16 Matrix for The Sacred Roman Goose
-///
-/// 0: Transparent
-/// 1: White Feathers (#FFFFFF)
-/// 2: Feather Shading (#D2DAE2)
-/// 3: Orange Beak / Feet (#FF9F1A)
-/// 4: Beak Shadow (#E58E26)
-/// 5: Eye Black (#1E272E)
-/// 6: Laurel Leaf / Crown (#2ED573)
-/// 7: Red Roman Cape (#FF4B4B)
-/// 8: Cape Shadow (#C0392B)
+/// 24 x 24 Matrix for The Sacred Roman Goose
 class GoosePixelPainter extends CustomPainter {
   final GooseAction action;
+  final int frameIndex; // 0, 1, 2, 3
 
-  const GoosePixelPainter({required this.action});
+  const GoosePixelPainter({
+    required this.action,
+    this.frameIndex = 0,
+  });
 
   static const List<List<int>> idleGrid = [
     // Row 0: Laurel Crown leaves top
@@ -726,7 +936,7 @@ class GoosePixelPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    const rows = 24;
+    const rows = 25;
     const cols = 24;
 
     final pixelSize = min(size.width / cols, size.height / rows);
@@ -735,28 +945,108 @@ class GoosePixelPainter extends CustomPainter {
 
     final paint = Paint()..isAntiAlias = false;
 
-    for (int r = 0; r < rows; r++) {
-      for (int c = 0; c < cols; c++) {
-        final colorIdx = idleGrid[r][c];
+    void drawPixel(int c, int targetY, Color col) {
+      if (c >= 0 && c < cols && targetY >= 0 && targetY < rows) {
+        paint.color = col;
+        canvas.drawRect(
+          Rect.fromLTWH(
+            offsetX + c * pixelSize,
+            offsetY + targetY * pixelSize,
+            pixelSize,
+            pixelSize,
+          ),
+          paint,
+        );
+      }
+    }
+
+    final bool isHonking = (action == GooseAction.honking);
+    // 4-frame retro RPG idle:
+    // Frame 0: Standing proud at rest
+    // Frame 1: Chest puffs out, head bobs up 1px, tail wags up, cape flutters
+    // Frame 2: Coin gleams with cross sparkle, wing tucks 1px, cape billows
+    // Frame 3: Settles back down with cape trailing fold
+    final int headShift = isHonking
+        ? ((frameIndex % 2 == 0) ? 0 : 1)
+        : ((frameIndex == 1 || frameIndex == 2) ? 0 : 1);
+
+    for (int r = 0; r < 24; r++) {
+      // Feet & lower body (rows 13..23) stay grounded; head/neck (0..12) bob
+      final int targetY = r <= 12 ? (r + headShift) : (r + 1);
+
+      for (int c = 0; c < 24; c++) {
+        int colorIdx = idleGrid[r][c];
+
+        // Frame 2 coin glint catchlight
+        if (frameIndex == 2 && r == 6 && c == 3) {
+          colorIdx = 6; // Catchlight white
+        } else if (frameIndex == 2 && r == 7 && c == 2) {
+          colorIdx = 6; // Secondary coin shine
+        }
+
+        // Frame 2 wing feather tuck highlight shift
+        if (frameIndex == 2 && r == 15 && (c == 11 || c == 12)) {
+          colorIdx = 3; // Subtle wing fold shadow
+        }
+
         if (colorIdx != 0 && palette.containsKey(colorIdx)) {
-          paint.color = palette[colorIdx]!;
-          canvas.drawRect(
-            Rect.fromLTWH(
-              offsetX + c * pixelSize,
-              offsetY + r * pixelSize,
-              pixelSize,
-              pixelSize,
-            ),
-            paint,
-          );
+          drawPixel(c, targetY, palette[colorIdx]!);
+
+          // Neck stretch connection when head bobs up
+          if (r == 12 && headShift == 0) {
+            drawPixel(c, targetY + 1, palette[colorIdx]!);
+          }
         }
       }
+    }
+
+    // Frame-specific retro sprite details
+    if (!isHonking) {
+      if (frameIndex == 1) {
+        // Plump belly puff forward + tail feather wag up + cape flutter
+        drawPixel(1, 14, palette[19]!);
+        drawPixel(2, 14, palette[1]!);
+        drawPixel(19, 15, palette[19]!);
+        drawPixel(18, 16, palette[1]!);
+        drawPixel(15, 11, palette[12]!);
+        drawPixel(16, 12, palette[12]!);
+        drawPixel(16, 13, palette[19]!);
+      } else if (frameIndex == 2) {
+        // Cape billows out further + coin sparkle star + perky tail
+        drawPixel(15, 11, palette[12]!);
+        drawPixel(16, 11, palette[12]!);
+        drawPixel(16, 12, palette[13]!);
+        drawPixel(17, 12, palette[19]!);
+        drawPixel(19, 15, palette[19]!);
+        drawPixel(18, 16, palette[1]!);
+        // Little sparkle above the gold coin
+        drawPixel(1, 5, palette[6]!);
+      } else if (frameIndex == 3) {
+        // Cape trailing fold as it settles
+        drawPixel(15, 13, palette[13]!);
+        drawPixel(16, 14, palette[19]!);
+      }
+    } else {
+      // Energetic HONK action: flapping wings, flaring cape, and sound wave!
+      final orange = palette[8]!;
+      final gold = palette[10]!;
+      // Sound wave / exclamation above head
+      drawPixel(4, 1, orange);
+      drawPixel(4, 2, orange);
+      drawPixel(2, 3, gold);
+      drawPixel(3, 3, gold);
+      // Flapping wing feathers & flaring cape
+      drawPixel(16, 11, palette[12]!);
+      drawPixel(17, 11, palette[12]!);
+      drawPixel(19, 15, palette[1]!);
+      drawPixel(20, 15, palette[19]!);
     }
   }
 
   @override
   bool shouldRepaint(covariant GoosePixelPainter oldDelegate) {
-    return oldDelegate.action != action;
+    return oldDelegate.action != action ||
+        oldDelegate.frameIndex != frameIndex;
   }
 }
 
