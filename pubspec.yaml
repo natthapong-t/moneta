@@ -40,6 +40,7 @@ dependencies:
   google_mlkit_text_recognition: ^0.16.0
   photo_manager: ^3.12.0
   shared_preferences: ^2.5.6
+  path_provider: ^2.1.2
   google_fonts: ^8.2.1
 
 dev_dependencies:
@@ -102,5 +103,5 @@ flutter_launcher_icons:
   ios: true
   image_path: "assets/images/app_logo_ios.png"
   min_sdk_android: 21
-  adaptive_icon_background: "#1E1E24"
+  adaptive_icon_background: "#161722"
   adaptive_icon_foreground: "assets/images/app_logo_adaptive_fg.png"

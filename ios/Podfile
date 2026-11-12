@@ -25,6 +25,12 @@ end
 
 require File.expand_path(File.join('packages', 'flutter_tools', 'bin', 'podhelper'), flutter_root)
 
+# Google ML Kit Apple Silicon Simulator Patch
+require File.expand_path(
+  '.symlinks/plugins/google_mlkit_commons/ios/scripts/apple_silicon_simulator',
+  __dir__,
+)
+
 flutter_ios_podfile_setup
 
 target 'Runner' do
@@ -43,4 +49,7 @@ post_install do |installer|
       config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.5'
     end
   end
+
+  # Patch MLKit fat binaries for arm64 Apple Silicon simulator
+  mlkit_apple_silicon_simulator_patch(installer)
 end
