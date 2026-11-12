@@ -11,6 +11,12 @@ class ExpenseStorageService {
   static const String _keyLastScanTimestamp = 'moneta_last_scan_timestamp';
   static const String _keyMonthlyBudget = 'moneta_monthly_budget';
   static const String _keyStreakDays = 'moneta_streak_days';
+  static const String _keyNoSpendDates = 'moneta_no_spend_dates';
+  static const String _keyCompletedOnboarding = 'moneta_completed_onboarding';
+  static const String _keyUserLanguage = 'moneta_user_language';
+  static const String _keyUserCurrency = 'moneta_user_currency';
+  static const String _keyUserSalaryRange = 'moneta_user_salary_range';
+  static const String _keyScanHistoryDays = 'moneta_scan_history_days';
 
   static ExpenseStorageService? _instance;
   static ExpenseStorageService get instance => _instance ??= ExpenseStorageService._();
@@ -177,6 +183,16 @@ class ExpenseStorageService {
     }
   }
 
+  /// Completely wipe all stored data and reset onboarding state (fresh install simulation)
+  Future<void> resetToFirstInstall() async {
+    try {
+      final p = await prefs;
+      await p.clear();
+    } catch (e) {
+      debugPrint('Error resetting to first install: $e');
+    }
+  }
+
   /// Monthly budget limit (Default: ฿15,000)
   Future<double> getMonthlyBudget() async {
     try {
@@ -205,6 +221,132 @@ class ExpenseStorageService {
     } catch (e) {
       debugPrint('Error getting streak days: $e');
       return 7;
+    }
+  }
+
+  Future<void> setStreakDays(int days) async {
+    try {
+      final p = await prefs;
+      await p.setInt(_keyStreakDays, days);
+    } catch (e) {
+      debugPrint('Error setting streak days: $e');
+    }
+  }
+
+  /// No-Spend Day tracking (Mintio v1.2.2 feature)
+  String _todayDateKey() {
+    final now = DateTime.now();
+    return '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+  }
+
+  Future<bool> isTodayNoSpendDay() async {
+    try {
+      final p = await prefs;
+      final dates = p.getStringList(_keyNoSpendDates) ?? [];
+      return dates.contains(_todayDateKey());
+    } catch (e) {
+      return false;
+    }
+  }
+
+  Future<bool> markTodayNoSpendDay() async {
+    try {
+      final p = await prefs;
+      final dates = (p.getStringList(_keyNoSpendDates) ?? []).toSet();
+      final today = _todayDateKey();
+      if (!dates.contains(today)) {
+        dates.add(today);
+        await p.setStringList(_keyNoSpendDates, dates.toList());
+        // Increment streak
+        final currentStreak = await getStreakDays();
+        await setStreakDays(currentStreak + 1);
+        return true;
+      }
+      return false;
+    } catch (e) {
+      debugPrint('Error marking no spend day: $e');
+      return false;
+    }
+  }
+
+  /// Onboarding status
+  Future<bool> hasCompletedOnboarding() async {
+    try {
+      final p = await prefs;
+      return p.getBool(_keyCompletedOnboarding) ?? false;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  Future<void> setCompletedOnboarding(bool completed) async {
+    try {
+      final p = await prefs;
+      await p.setBool(_keyCompletedOnboarding, completed);
+    } catch (e) {
+      debugPrint('Error setting onboarding status: $e');
+    }
+  }
+
+  /// User Preferences from Onboarding
+  Future<String> getUserLanguage() async {
+    try {
+      final p = await prefs;
+      return p.getString(_keyUserLanguage) ?? 'th';
+    } catch (e) {
+      return 'th';
+    }
+  }
+
+  Future<void> setUserLanguage(String lang) async {
+    final p = await prefs;
+    await p.setString(_keyUserLanguage, lang);
+  }
+
+  Future<String> getUserCurrency() async {
+    try {
+      final p = await prefs;
+      return p.getString(_keyUserCurrency) ?? 'THB';
+    } catch (e) {
+      return 'THB';
+    }
+  }
+
+  Future<void> setUserCurrency(String currency) async {
+    final p = await prefs;
+    await p.setString(_keyUserCurrency, currency);
+  }
+
+  Future<String> getUserSalaryRange() async {
+    try {
+      final p = await prefs;
+      return p.getString(_keyUserSalaryRange) ?? '฿10,000 - 50,000';
+    } catch (e) {
+      return '฿10,000 - 50,000';
+    }
+  }
+
+  Future<void> setUserSalaryRange(String range) async {
+    final p = await prefs;
+    await p.setString(_keyUserSalaryRange, range);
+  }
+
+  /// Scan History Window in Days (0 = today only, 7 = 7 days, 30 = 30 days, -1 = all)
+  Future<int> getScanHistoryDays() async {
+    try {
+      final p = await prefs;
+      return p.getInt(_keyScanHistoryDays) ?? 7; // Default: Sweet Spot 7 days
+    } catch (e) {
+      return 7;
+    }
+  }
+
+  Future<void> setScanHistoryDays(int days) async {
+    try {
+      final p = await prefs;
+      await p.setInt(_keyScanHistoryDays, days);
+    } catch (e) {
+      debugPrint('Error setting scan history days: $e');
     }
   }
 }

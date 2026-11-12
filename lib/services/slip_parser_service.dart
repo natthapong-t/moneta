@@ -1,11 +1,13 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:google_mlkit_barcode_scanning/google_mlkit_barcode_scanning.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:photo_manager/photo_manager.dart';
 import '../models/expense_card_item.dart';
+import 'expense_storage_service.dart';
 
 class ThaiBankInfo {
   final String name;
@@ -145,9 +147,13 @@ class SlipParserService {
   }
 
   /// Stream slips discovered in the background in chronological order (Newest -> Oldest)
-  /// Walks through the unified photo gallery by creation date so the user sees a natural timeline
+  /// Combines:
+  /// (B) Time-Window filter (Defaults to 7 days, 0 = today only, 30 = month, -1 = all)
+  /// (C) Bank Album Prioritization: Scans dedicated Thai banking folders first (K PLUS, SCB, etc.),
+  ///     then recent camera roll with strict exclusion of screenshots and landscape images.
   Stream<SlipScanProgress> streamGallerySlips({
     int? maxScan,
+    int? historyDays,
     Set<String> knownReferenceNos = const {},
     Set<String> knownImagePaths = const {},
     Set<String> knownAssetIds = const {},
@@ -158,8 +164,26 @@ class SlipParserService {
       return;
     }
 
-    // Unified camera roll ordered strictly from newest to oldest
+    final int days = historyDays ?? await ExpenseStorageService.instance.getScanHistoryDays();
+    final now = DateTime.now();
+    final DateTime minDate;
+    if (days == 0) {
+      // Today only (from midnight 00:00:00)
+      minDate = DateTime(now.year, now.month, now.day);
+    } else if (days > 0) {
+      // Days window (e.g. 7 days or 30 days)
+      minDate = now.subtract(Duration(days: days));
+    } else {
+      // All time
+      minDate = DateTime.fromMillisecondsSinceEpoch(0);
+    }
+
+    // Unified camera roll ordered strictly from newest to oldest within date window
     final filterOption = FilterOptionGroup(
+      createTimeCond: DateTimeCond(
+        min: minDate,
+        max: now,
+      ),
       orders: [
         const OrderOption(
           type: OrderOptionType.createDate,
@@ -168,18 +192,25 @@ class SlipParserService {
       ],
     );
 
-    final List<AssetPathEntity> albums = await PhotoManager.getAssetPathList(
+    // Query albums with onlyAll: false to discover dedicated banking albums
+    final List<AssetPathEntity> allAlbums = await PhotoManager.getAssetPathList(
       type: RequestType.image,
-      onlyAll: true,
+      onlyAll: false,
       filterOption: filterOption,
     );
-    if (albums.isEmpty) return;
+    if (allAlbums.isEmpty) return;
 
-    final AssetPathEntity timelineAlbum = albums.first;
-    final int totalAssets = await timelineAlbum.assetCountAsync;
-    final int scanTarget = (maxScan != null && maxScan > 0 && maxScan < totalAssets)
-        ? maxScan
-        : totalAssets;
+    // ⚡ Strategy C: Segregate dedicated Bank / Financial albums from General timeline
+    final List<AssetPathEntity> bankAlbums = [];
+    AssetPathEntity? generalAlbum;
+
+    for (final album in allAlbums) {
+      if (album.isAll) {
+        generalAlbum = album;
+      } else if (isFinancialAlbum(album.name)) {
+        bankAlbums.add(album);
+      }
+    }
 
     final bool isIOS = Platform.isIOS;
     final BarcodeScanner? barcodeScanner =
@@ -192,90 +223,133 @@ class SlipParserService {
     const int batchSize = 25;
     final Set<String> processedPaths = Set<String>.from(knownImagePaths);
     final Set<String> existingRefs = Set<String>.from(knownReferenceNos);
+    final Set<String> processedAssetIds = Set<String>.from(knownAssetIds);
+
+    // Determine target total: general album already reflects total photos in this timeframe
+    int totalTarget = 0;
+    if (generalAlbum != null) {
+      totalTarget = await generalAlbum.assetCountAsync;
+    } else {
+      for (final bAlbum in bankAlbums) {
+        totalTarget += await bAlbum.assetCountAsync;
+      }
+    }
+
+    if (maxScan != null && maxScan > 0 && maxScan < totalTarget) {
+      totalTarget = maxScan;
+    }
+
+    // Processing order: Dedicated bank albums first, followed by general timeline
+    final List<AssetPathEntity> albumsToProcess = [
+      ...bankAlbums,
+      ?generalAlbum,
+    ];
 
     try {
-      for (int page = 0; page * batchSize < scanTarget; page++) {
+      for (final album in albumsToProcess) {
         if (maxScan != null && scannedSoFar >= maxScan) break;
+        final int albumAssetCount = await album.assetCountAsync;
+        if (albumAssetCount == 0) continue;
 
-        final start = page * batchSize;
-        final end = (start + batchSize > scanTarget) ? scanTarget : start + batchSize;
+        final bool isDedicatedBankAlbum = !album.isAll && isFinancialAlbum(album.name);
+        final String currentAlbumName = album.name;
 
-        final List<AssetEntity> batch = await timelineAlbum.getAssetListRange(
-          start: start,
-          end: end,
-        );
+        for (int page = 0; page * batchSize < albumAssetCount; page++) {
+          if (maxScan != null && scannedSoFar >= maxScan) break;
 
-        for (final asset in batch) {
-          scannedSoFar++;
+          final start = page * batchSize;
+          final end = (start + batchSize > albumAssetCount)
+              ? albumAssetCount
+              : start + batchSize;
 
-          // ⚡ Instant Cache Skip: If asset was already scanned (slip or non-slip), skip in 0.001ms
-          if (knownAssetIds.contains(asset.id)) {
-            continue;
-          }
-
-          // Pre-filter: Bank slips are portrait or square
-          if (asset.width > asset.height * 1.25) {
-            onAssetScanned?.call(asset.id, null);
-            continue;
-          }
-
-          final file = await asset.file;
-          if (file == null || !await file.exists()) {
-            onAssetScanned?.call(asset.id, null);
-            continue;
-          }
-
-          // Fast-skip screenshots, stock apps, and food delivery folders to save CPU
-          if (isExcludedAlbumOrPath(file.path)) {
-            onAssetScanned?.call(asset.id, file.path);
-            continue;
-          }
-
-          if (processedPaths.contains(file.path)) {
-            onAssetScanned?.call(asset.id, file.path);
-            continue;
-          }
-          processedPaths.add(file.path);
-
-          final item = await parseSingleSlip(
-            file.path,
-            scanner: barcodeScanner,
-            recognizer: textRecognizer,
-            sourceAlbum: 'ไทม์ไลน์ล่าสุด',
-            assetDateTime: asset.createDateTime,
+          final List<AssetEntity> batch = await album.getAssetListRange(
+            start: start,
+            end: end,
           );
 
-          // Mark this asset as analyzed so it is NEVER re-scanned in the future
-          onAssetScanned?.call(asset.id, file.path);
+          for (final asset in batch) {
+            if (maxScan != null && scannedSoFar >= maxScan) break;
 
-          if (item != null) {
-            if (item.referenceNo.isNotEmpty && existingRefs.contains(item.referenceNo)) {
+            // ⚡ Instant Cache & Dedup Skip
+            if (processedAssetIds.contains(asset.id)) {
               continue;
             }
-            if (item.referenceNo.isNotEmpty) {
-              existingRefs.add(item.referenceNo);
+            processedAssetIds.add(asset.id);
+            scannedSoFar++;
+
+            // Pre-filter: Bank slips are portrait or square (aspect ratio <= 1.05)
+            // Skip landscape photos (camera photos, landscape screenshots)
+            if (asset.width > asset.height * 1.05) {
+              onAssetScanned?.call(asset.id, null);
+              continue;
             }
 
-            foundCount++;
-            yield SlipScanProgress(
-              scanned: scannedSoFar,
-              total: scanTarget,
-              foundCount: foundCount,
-              newSlip: item,
-              currentSource: 'ไทม์ไลน์ล่าสุด',
+            // Quick check title / filename for screenshots if in general album
+            if (!isDedicatedBankAlbum &&
+                asset.title != null &&
+                isExcludedAlbumOrPath(asset.title!)) {
+              onAssetScanned?.call(asset.id, null);
+              continue;
+            }
+
+            final file = await asset.file;
+            if (file == null || !await file.exists()) {
+              onAssetScanned?.call(asset.id, null);
+              continue;
+            }
+
+            // Fast-skip screenshots, stock apps, and food delivery folders to save CPU
+            if (!isDedicatedBankAlbum && isExcludedAlbumOrPath(file.path)) {
+              onAssetScanned?.call(asset.id, file.path);
+              continue;
+            }
+
+            if (processedPaths.contains(file.path)) {
+              onAssetScanned?.call(asset.id, file.path);
+              continue;
+            }
+            processedPaths.add(file.path);
+
+            final item = await parseSingleSlip(
+              file.path,
+              scanner: barcodeScanner,
+              recognizer: textRecognizer,
+              sourceAlbum: currentAlbumName,
+              assetDateTime: asset.createDateTime,
             );
+
+            // Mark this asset as analyzed so it is NEVER re-scanned in the future
+            onAssetScanned?.call(asset.id, file.path);
+
+            if (item != null) {
+              if (item.referenceNo.isNotEmpty && existingRefs.contains(item.referenceNo)) {
+                continue;
+              }
+              if (item.referenceNo.isNotEmpty) {
+                existingRefs.add(item.referenceNo);
+              }
+
+              foundCount++;
+              yield SlipScanProgress(
+                scanned: scannedSoFar,
+                total: totalTarget,
+                foundCount: foundCount,
+                newSlip: item,
+                currentSource: currentAlbumName,
+              );
+            }
+
+            await Future.delayed(const Duration(milliseconds: 5));
           }
 
-          await Future.delayed(const Duration(milliseconds: 5));
+          yield SlipScanProgress(
+            scanned: scannedSoFar,
+            total: totalTarget,
+            foundCount: foundCount,
+            newSlip: null,
+            currentSource: currentAlbumName,
+          );
         }
-
-        yield SlipScanProgress(
-          scanned: scannedSoFar,
-          total: scanTarget,
-          foundCount: foundCount,
-          newSlip: null,
-          currentSource: 'ไทม์ไลน์ล่าสุด',
-        );
       }
     } finally {
       barcodeScanner?.close();
@@ -284,14 +358,33 @@ class SlipParserService {
   }
 
   /// Automatically scans recent gallery images in chronological order (Newest -> Oldest)
-  Future<List<String>> scanDeviceGalleryImagePaths({int? limit}) async {
+  /// Applies time window and bank album prioritization
+  Future<List<String>> scanDeviceGalleryImagePaths({
+    int? limit,
+    int? historyDays,
+  }) async {
     try {
       final PermissionState ps = await PhotoManager.requestPermissionExtend();
       if (!ps.isAuth && !ps.hasAccess) {
         return [];
       }
 
+      final int days = historyDays ?? await ExpenseStorageService.instance.getScanHistoryDays();
+      final now = DateTime.now();
+      final DateTime minDate;
+      if (days == 0) {
+        minDate = DateTime(now.year, now.month, now.day);
+      } else if (days > 0) {
+        minDate = now.subtract(Duration(days: days));
+      } else {
+        minDate = DateTime.fromMillisecondsSinceEpoch(0);
+      }
+
       final filterOption = FilterOptionGroup(
+        createTimeCond: DateTimeCond(
+          min: minDate,
+          max: now,
+        ),
         orders: [
           const OrderOption(
             type: OrderOptionType.createDate,
@@ -302,35 +395,56 @@ class SlipParserService {
 
       final List<AssetPathEntity> albums = await PhotoManager.getAssetPathList(
         type: RequestType.image,
-        onlyAll: true,
+        onlyAll: false,
         filterOption: filterOption,
       );
 
       if (albums.isEmpty) return [];
-      final generalAlbum = albums.first;
-      final int totalGeneral = await generalAlbum.assetCountAsync;
-      final int end = (limit != null && limit > 0 && limit < totalGeneral)
-          ? limit
-          : totalGeneral;
 
-      final List<AssetEntity> generalAssets = await generalAlbum.getAssetListRange(
-        start: 0,
-        end: end,
-      );
+      final List<AssetPathEntity> bankAlbums = [];
+      AssetPathEntity? generalAlbum;
+      for (final a in albums) {
+        if (a.isAll) {
+          generalAlbum = a;
+        } else if (isFinancialAlbum(a.name)) {
+          bankAlbums.add(a);
+        }
+      }
+
+      final List<AssetPathEntity> targetAlbums = [
+        ...bankAlbums,
+        ?generalAlbum,
+      ];
 
       final List<String> paths = [];
       final Set<String> seenPaths = {};
 
-      for (final asset in generalAssets) {
-        if (asset.width > asset.height * 1.25) continue;
+      for (final album in targetAlbums) {
+        final bool isDedicated = !album.isAll && isFinancialAlbum(album.name);
+        final int totalInAlbum = await album.assetCountAsync;
+        if (totalInAlbum == 0) continue;
 
-        final file = await asset.file;
-        if (file != null &&
-            await file.exists() &&
-            !isExcludedAlbumOrPath(file.path) &&
-            seenPaths.add(file.path)) {
-          paths.add(file.path);
-          if (limit != null && paths.length >= limit) return paths;
+        final end = (limit != null && limit > 0 && limit < totalInAlbum)
+            ? limit
+            : totalInAlbum;
+
+        final List<AssetEntity> assets = await album.getAssetListRange(
+          start: 0,
+          end: end,
+        );
+
+        for (final asset in assets) {
+          if (asset.width > asset.height * 1.05) continue;
+          if (!isDedicated && asset.title != null && isExcludedAlbumOrPath(asset.title!)) continue;
+
+          final file = await asset.file;
+          if (file != null &&
+              await file.exists() &&
+              (isDedicated || !isExcludedAlbumOrPath(file.path)) &&
+              seenPaths.add(file.path)) {
+            paths.add(file.path);
+            if (limit != null && paths.length >= limit) return paths;
+          }
         }
       }
 
@@ -666,6 +780,27 @@ class SlipParserService {
         } catch (_) {}
       }
 
+      // Persist slip image to permanent app documents so it never vanishes on cache wipe
+      String savedImagePath = path;
+      try {
+        final srcFile = File(path);
+        if (await srcFile.exists()) {
+          final docsDir = await getApplicationDocumentsDirectory();
+          final slipsDir = Directory('${docsDir.path}/saved_slips');
+          if (!await slipsDir.exists()) {
+            await slipsDir.create(recursive: true);
+          }
+          final slipId = 'slip-${(refFromQR ?? path).hashCode.abs()}';
+          final destFile = File('${slipsDir.path}/$slipId.jpg');
+          if (!await destFile.exists()) {
+            await srcFile.copy(destFile.path);
+          }
+          savedImagePath = destFile.path;
+        }
+      } catch (e) {
+        debugPrint('Could not copy slip to permanent storage: $e');
+      }
+
       return ExpenseCardItem(
         id: 'slip-${(refFromQR ?? path).hashCode.abs()}',
         receiverName: receiver.isNotEmpty
@@ -677,7 +812,7 @@ class SlipParserService {
         bankColor: bankColor,
         referenceNo: finalRef,
         note: note,
-        imagePath: path,
+        imagePath: savedImagePath,
       );
     } catch (e) {
       debugPrint('Error parsing slip at $path: $e');

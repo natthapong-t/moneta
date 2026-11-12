@@ -1,6 +1,27 @@
 import 'package:flutter/material.dart';
 import '../core/constants/categories.dart';
 
+enum TargetPerson {
+  myself('myself', 'ตัวเอง', Icons.star_rounded, Color(0xFF4F5FFA)),
+  sweetheart('sweetheart', 'คนรู้ใจ', Icons.favorite_rounded, Color(0xFFFF5252)),
+  friends('friends', 'เพื่อน', Icons.groups_rounded, Color(0xFF8BC34A));
+
+  final String id;
+  final String label;
+  final IconData icon;
+  final Color color;
+
+  const TargetPerson(this.id, this.label, this.icon, this.color);
+
+  static TargetPerson fromId(String? id) {
+    if (id == null) return TargetPerson.myself;
+    return TargetPerson.values.firstWhere(
+      (p) => p.id == id,
+      orElse: () => TargetPerson.myself,
+    );
+  }
+}
+
 class ExpenseCardItem {
   final String id;
   final String receiverName;
@@ -12,6 +33,7 @@ class ExpenseCardItem {
   final String? note;
   final String? imagePath;
   final bool isIncome;
+  final TargetPerson targetPerson;
   ExpenseCategory? assignedCategory;
 
   ExpenseCardItem({
@@ -25,6 +47,7 @@ class ExpenseCardItem {
     this.note,
     this.imagePath,
     this.isIncome = false,
+    this.targetPerson = TargetPerson.myself,
     this.assignedCategory,
   });
 
@@ -32,6 +55,7 @@ class ExpenseCardItem {
     ExpenseCategory? assignedCategory,
     String? imagePath,
     bool? isIncome,
+    TargetPerson? targetPerson,
   }) {
     return ExpenseCardItem(
       id: id,
@@ -44,6 +68,7 @@ class ExpenseCardItem {
       note: note,
       imagePath: imagePath ?? this.imagePath,
       isIncome: isIncome ?? this.isIncome,
+      targetPerson: targetPerson ?? this.targetPerson,
       assignedCategory: assignedCategory ?? this.assignedCategory,
     );
   }
@@ -73,6 +98,7 @@ class ExpenseCardItem {
     'note': note,
     'imagePath': imagePath,
     'isIncome': isIncome,
+    'targetPersonId': targetPerson.id,
     'assignedCategoryId': assignedCategory?.id,
   };
 
@@ -90,6 +116,7 @@ class ExpenseCardItem {
 
     final colorVal = json['bankColor'];
     final Color color = colorVal is int ? Color(colorVal) : const Color(0xFF003D79);
+    final person = TargetPerson.fromId(json['targetPersonId'] as String?);
 
     return ExpenseCardItem(
       id: json['id'] as String? ?? 'id-${DateTime.now().millisecondsSinceEpoch}',
@@ -104,6 +131,7 @@ class ExpenseCardItem {
       note: json['note'] as String?,
       imagePath: json['imagePath'] as String?,
       isIncome: json['isIncome'] as bool? ?? false,
+      targetPerson: person,
       assignedCategory: category,
     );
   }
@@ -120,6 +148,8 @@ class ExpenseCardItem {
         bankColor: const Color(0xFF138F46),
         referenceNo: '2026100578912445',
         note: 'มื้อกลางวัน ข้าวเที่ยง',
+        targetPerson: TargetPerson.myself,
+        assignedCategory: ExpenseCategory.defaultCorners[0], // food
       ),
       ExpenseCardItem(
         id: 'slip-002',
@@ -130,16 +160,20 @@ class ExpenseCardItem {
         bankColor: const Color(0xFF4E2A84),
         referenceNo: '2026100566319802',
         note: 'เดินทางไปทำงาน',
+        targetPerson: TargetPerson.myself,
+        assignedCategory: ExpenseCategory.defaultCorners[1], // transport
       ),
       ExpenseCardItem(
         id: 'slip-003',
-        receiverName: 'Uniqlo สาขาเซ็นทรัลลาดพร้าว',
+        receiverName: 'Uniqlo เซ็นทรัลลาดพร้าว',
         amount: 990.00,
         dateTime: now.subtract(const Duration(days: 1, hours: 2)),
         bankName: 'กสิกรไทย',
         bankColor: const Color(0xFF138F46),
         referenceNo: '2026100511223344',
-        note: 'เสื้อเชิ้ตทำงาน AIRism',
+        note: 'เสื้อเชิ้ตของขวัญ',
+        targetPerson: TargetPerson.sweetheart,
+        assignedCategory: ExpenseCategory.defaultCorners[2], // shopping
       ),
       ExpenseCardItem(
         id: 'slip-004',
@@ -150,26 +184,32 @@ class ExpenseCardItem {
         bankColor: const Color(0xFF003D79),
         referenceNo: '2026100599887766',
         note: 'ค่าไฟฟ้าประจำเดือน',
+        targetPerson: TargetPerson.myself,
+        assignedCategory: ExpenseCategory.defaultCorners[3], // bills
       ),
       ExpenseCardItem(
         id: 'slip-005',
-        receiverName: 'GrabFood Thailand',
-        amount: 235.00,
-        dateTime: now.subtract(const Duration(days: 2, hours: 4)),
+        receiverName: 'Mo-Mo-Paradise ชาบูเลี้ยงเพื่อน',
+        amount: 1250.00,
+        dateTime: now.subtract(const Duration(days: 3, hours: 4)),
         bankName: 'ทรูมันนี่',
         bankColor: const Color(0xFFFA5A00),
         referenceNo: '2026100544556677',
-        note: 'ข้าวเย็น หมูทอดทงคัตสึ',
+        note: 'สังสรรค์วันเกิด',
+        targetPerson: TargetPerson.friends,
+        assignedCategory: ExpenseCategory.defaultCorners[0], // food
       ),
       ExpenseCardItem(
         id: 'slip-006',
         receiverName: 'PTT Station สาขาวิภาวดี',
         amount: 800.00,
-        dateTime: now.subtract(const Duration(days: 3)),
+        dateTime: now.subtract(const Duration(days: 4)),
         bankName: 'กรุงไทย',
         bankColor: const Color(0xFF00A3E0),
         referenceNo: '2026100412345678',
         note: 'เติมน้ำมัน Gasohol 95',
+        targetPerson: TargetPerson.myself,
+        assignedCategory: ExpenseCategory.defaultCorners[1], // transport
       ),
     ];
   }
