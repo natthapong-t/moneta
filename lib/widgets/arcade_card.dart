@@ -23,7 +23,7 @@ class ArcadeCard extends StatelessWidget {
     Color? backgroundColor,
     Color? color,
     this.borderColor,
-    this.borderWidth = 1.8,
+    this.borderWidth = 1.5,
     this.shadowColor = AppColors.shadowDefault,
     this.depth = 3.5,
     this.borderRadius,
@@ -35,8 +35,8 @@ class ArcadeCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final effectiveRadius = borderRadius ?? BorderRadius.circular(20);
-    final effectiveBorderColor = borderColor ?? shadowColor;
+    final effectiveRadius = borderRadius ?? BorderRadius.circular(22);
+    final effectiveBorderColor = borderColor ?? AppColors.border;
 
     final content = Container(
       width: width,

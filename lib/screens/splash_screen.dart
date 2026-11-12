@@ -2,8 +2,11 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../core/theme/app_theme.dart';
+import '../services/expense_storage_service.dart';
 import '../widgets/arcade_progress_bar.dart';
+import '../widgets/moneta_goddess_widget.dart';
 import 'main_navigation_shell.dart';
+import 'onboarding_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -26,11 +29,11 @@ class _SplashScreenState extends State<SplashScreen>
 
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1000),
+      duration: const Duration(milliseconds: 900),
     );
 
-    _scaleAnimation = Tween<double>(begin: 0.6, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.elasticOut),
+    _scaleAnimation = Tween<double>(begin: 0.7, end: 1.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOutBack),
     );
 
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
@@ -56,22 +59,23 @@ class _SplashScreenState extends State<SplashScreen>
     });
   }
 
-  void _navigateToHome() {
-    Future.delayed(const Duration(milliseconds: 250), () {
-      if (!mounted) return;
-      HapticFeedback.lightImpact();
-      Navigator.of(context).pushReplacement(
-        PageRouteBuilder(
-          transitionDuration: const Duration(milliseconds: 500),
-          pageBuilder: (context, animation, secondaryAnimation) =>
-              const MainNavigationShell(),
-          transitionsBuilder:
-              (context, animation, secondaryAnimation, child) {
-            return FadeTransition(opacity: animation, child: child);
-          },
-        ),
-      );
-    });
+  void _navigateToHome() async {
+    final hasOnboarded =
+        await ExpenseStorageService.instance.hasCompletedOnboarding();
+    if (!mounted) return;
+    HapticFeedback.lightImpact();
+    Navigator.of(context).pushReplacement(
+      PageRouteBuilder(
+        transitionDuration: const Duration(milliseconds: 500),
+        pageBuilder: (context, animation, secondaryAnimation) =>
+            hasOnboarded
+                ? const MainNavigationShell()
+                : const OnboardingScreen(),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return FadeTransition(opacity: animation, child: child);
+        },
+      ),
+    );
   }
 
   @override
@@ -94,44 +98,47 @@ class _SplashScreenState extends State<SplashScreen>
               children: [
                 const Spacer(flex: 2),
 
-                // Animated Cute Piggy Roman Coin Logo
+                // Goddess Moneta & The Sacred Goose Mascot
                 ScaleTransition(
                   scale: _scaleAnimation,
                   child: FadeTransition(
                     opacity: _fadeAnimation,
                     child: Container(
-                      width: 170,
-                      height: 170,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 22,
+                        vertical: 16,
+                      ),
                       decoration: BoxDecoration(
-                        shape: BoxShape.circle,
+                        color: AppColors.surface,
+                        borderRadius: BorderRadius.circular(36),
+                        border: Border.all(
+                          color: AppColors.border,
+                          width: 1.5,
+                        ),
                         boxShadow: const [
                           BoxShadow(
                             color: AppColors.shadowDefault,
-                            offset: Offset(0, 8),
-                            blurRadius: 0, // Flat 3D arcade shadow
+                            offset: Offset(0, 10),
+                            blurRadius: 24,
                           ),
                         ],
                       ),
-                      child: ClipOval(
-                        child: Image.asset(
-                          'assets/images/app_logo.png',
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) => Container(
-                            color: AppColors.gold,
-                            child: const Icon(
-                              Icons.savings_rounded,
-                              size: 72,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
+                      alignment: Alignment.center,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: const [
+                          SacredGoosePixelWidget(size: 56),
+                          SizedBox(width: 14),
+                          MonetaGoddessPixelWidget(size: 110, mood: GoddessMood.happy),
+                        ],
                       ),
                     ),
                   ),
                 ),
-                const SizedBox(height: 28),
+                const SizedBox(height: 32),
 
-                // App Title
+                // App Title & Tagline
                 FadeTransition(
                   opacity: _fadeAnimation,
                   child: Column(
@@ -142,26 +149,17 @@ class _SplashScreenState extends State<SplashScreen>
                           fontSize: 32,
                           fontWeight: FontWeight.w900,
                           letterSpacing: 4.0,
-                          color: AppColors.gold,
-                        ),
-                      ),
-                      SizedBox(height: 4),
-                      Text(
-                        'PORCRCVS • MONETA',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 2.0,
-                          color: AppColors.textSecondary,
+                          color: AppColors.marbleWhite,
                         ),
                       ),
                       SizedBox(height: 8),
                       Text(
-                        'บันทึกการเงินด้วยการปัดสลิป • ไร้รอยต่อ',
+                        'Your daily money check-in',
                         style: TextStyle(
-                          fontSize: 13,
+                          fontSize: 14,
                           fontWeight: FontWeight.w600,
-                          color: AppColors.textPrimary,
+                          letterSpacing: 0.4,
+                          color: AppColors.textSecondary,
                         ),
                       ),
                     ],
@@ -170,24 +168,26 @@ class _SplashScreenState extends State<SplashScreen>
 
                 const Spacer(flex: 2),
 
-                // Playful Arcade Loading Progress Bar
+                // Sleek Mintio Loading Bar
                 Column(
                   children: [
                     SizedBox(
-                      width: 140,
+                      width: 150,
                       child: ArcadeProgressBar(
                         value: _loadingProgress.clamp(0.0, 1.0),
-                        height: 8,
-                        progressColor: AppColors.gold,
+                        height: 5,
+                        progressColor: AppColors.mintioIndigo,
+                        backgroundColor: AppColors.surfaceLight,
                       ),
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 14),
                     const Text(
-                      'กำลังโหลดข้อมูล...',
+                      'Loading...',
                       style: TextStyle(
-                        fontSize: 11,
+                        fontSize: 12,
                         fontWeight: FontWeight.w600,
-                        color: AppColors.textSecondary,
+                        color: AppColors.textMuted,
+                        letterSpacing: 0.4,
                       ),
                     ),
                   ],

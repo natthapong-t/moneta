@@ -3,8 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import '../core/theme/app_theme.dart';
 import '../models/expense_card_item.dart';
-import 'arcade_button.dart';
-import 'arcade_card.dart';
 
 class QuickIncomeSheet extends StatefulWidget {
   final Function(ExpenseCardItem item) onIncomeCreated;
@@ -80,12 +78,18 @@ class _QuickIncomeSheetState extends State<QuickIncomeSheet> {
       HapticFeedback.heavyImpact();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          backgroundColor: AppColors.vaultTributum,
+          backgroundColor: AppColors.mintioCardElevated,
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+            side: const BorderSide(color: AppColors.expenseRed, width: 1.2),
+          ),
           content: const Text(
             'กรุณากรอกจำนวนเงินให้ถูกต้อง',
-            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: AppColors.mintioTextPrimary,
+            ),
           ),
         ),
       );
@@ -101,7 +105,7 @@ class _QuickIncomeSheetState extends State<QuickIncomeSheet> {
       amount: amount,
       dateTime: _selectedDate,
       bankName: 'รายรับ',
-      bankColor: AppColors.emerald,
+      bankColor: AppColors.mintioMint,
       referenceNo: 'INC-${DateTime.now().millisecondsSinceEpoch}',
       note: note.isNotEmpty ? note : _selectedSource,
       isIncome: true,
@@ -119,15 +123,15 @@ class _QuickIncomeSheetState extends State<QuickIncomeSheet> {
 
     return Container(
       decoration: const BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.mintioCard,
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
         border: Border(
-          top: BorderSide(color: AppColors.borderDark, width: 2.5),
-          left: BorderSide(color: AppColors.borderDark, width: 2.5),
-          right: BorderSide(color: AppColors.borderDark, width: 2.5),
+          top: BorderSide(color: AppColors.mintioBorder, width: 1.5),
+          left: BorderSide(color: AppColors.mintioBorder, width: 1.5),
+          right: BorderSide(color: AppColors.mintioBorder, width: 1.5),
         ),
       ),
-      padding: EdgeInsets.fromLTRB(20, 16, 20, 20 + bottomInset),
+      padding: EdgeInsets.fromLTRB(20, 14, 20, 24 + bottomInset),
       child: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -136,15 +140,15 @@ class _QuickIncomeSheetState extends State<QuickIncomeSheet> {
             // Handle bar
             Center(
               child: Container(
-                width: 48,
-                height: 5,
+                width: 42,
+                height: 4.5,
                 decoration: BoxDecoration(
-                  color: AppColors.borderDark.withValues(alpha: 0.3),
+                  color: AppColors.mintioTextMuted.withValues(alpha: 0.4),
                   borderRadius: BorderRadius.circular(10),
                 ),
               ),
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: 16),
 
             // Header Row
             Row(
@@ -155,9 +159,12 @@ class _QuickIncomeSheetState extends State<QuickIncomeSheet> {
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: AppColors.emerald.withValues(alpha: 0.15),
+                        color: AppColors.mintioMint.withValues(alpha: 0.16),
                         borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: AppColors.emerald, width: 1.5),
+                        border: Border.all(
+                          color: AppColors.mintioMint.withValues(alpha: 0.4),
+                          width: 1.2,
+                        ),
                       ),
                       child: const Text(
                         '🪙',
@@ -171,17 +178,18 @@ class _QuickIncomeSheetState extends State<QuickIncomeSheet> {
                         Text(
                           'เพิ่มรายรับ',
                           style: TextStyle(
-                            fontSize: 17,
+                            fontSize: 18,
                             fontWeight: FontWeight.w900,
-                            color: AppColors.textPrimary,
+                            color: AppColors.mintioTextPrimary,
                           ),
                         ),
+                        SizedBox(height: 2),
                         Text(
-                          'บันทึกรายการเงินเข้า',
+                          'บันทึกรายการเงินเข้ากระเป๋า',
                           style: TextStyle(
                             fontSize: 12,
-                            color: AppColors.textSecondary,
-                            fontWeight: FontWeight.w600,
+                            color: AppColors.mintioTextSecondary,
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
                       ],
@@ -190,25 +198,28 @@ class _QuickIncomeSheetState extends State<QuickIncomeSheet> {
                 ),
                 IconButton(
                   onPressed: () => Navigator.of(context).pop(),
-                  icon: const Icon(Icons.close_rounded, color: AppColors.textSecondary),
+                  icon: const Icon(Icons.close_rounded, color: AppColors.mintioTextSecondary),
                 ),
               ],
             ),
-            const SizedBox(height: 18),
+            const SizedBox(height: 20),
 
-            // Amount Field
-            ArcadeCard(
-              borderColor: AppColors.emerald,
-              shadowColor: AppColors.emerald.withValues(alpha: 0.3),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            // Amount Input Card
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: AppColors.mintioMidnight,
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: AppColors.mintioMint.withValues(alpha: 0.6), width: 1.5),
+              ),
               child: Row(
                 children: [
                   const Text(
                     '+฿',
                     style: TextStyle(
-                      fontSize: 26,
+                      fontSize: 28,
                       fontWeight: FontWeight.w900,
-                      color: AppColors.emerald,
+                      color: AppColors.mintioMint,
                     ),
                   ),
                   const SizedBox(width: 10),
@@ -220,12 +231,13 @@ class _QuickIncomeSheetState extends State<QuickIncomeSheet> {
                       style: const TextStyle(
                         fontSize: 28,
                         fontWeight: FontWeight.w900,
-                        color: AppColors.textPrimary,
+                        color: AppColors.mintioTextPrimary,
                       ),
+                      cursorColor: AppColors.mintioMint,
                       decoration: const InputDecoration(
                         hintText: '0.00',
                         hintStyle: TextStyle(
-                          color: AppColors.textSecondary,
+                          color: AppColors.mintioTextMuted,
                           fontSize: 28,
                           fontWeight: FontWeight.w700,
                         ),
@@ -251,65 +263,73 @@ class _QuickIncomeSheetState extends State<QuickIncomeSheet> {
                   },
                   borderRadius: BorderRadius.circular(16),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
                     decoration: BoxDecoration(
-                      color: AppColors.background,
+                      color: AppColors.mintioCardElevated,
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: AppColors.borderDark, width: 1.5),
+                      border: Border.all(color: AppColors.mintioBorder, width: 1.2),
                     ),
                     child: Text(
                       label,
                       style: const TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w800,
-                        color: AppColors.emerald,
+                        color: AppColors.mintioMint,
                       ),
                     ),
                   ),
                 );
               }).toList(),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 18),
 
             // Source Selector
             const Text(
               'แหล่งที่มาของเงิน',
               style: TextStyle(
                 fontSize: 13,
-                fontWeight: FontWeight.w800,
-                color: AppColors.textSecondary,
+                fontWeight: FontWeight.w700,
+                color: AppColors.mintioTextSecondary,
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 10),
             Wrap(
               spacing: 8,
               runSpacing: 8,
               children: _incomeSources.map((source) {
                 final isSelected = _selectedSource == source;
-                return ChoiceChip(
-                  label: Text(source),
-                  selected: isSelected,
-                  selectedColor: AppColors.emerald.withValues(alpha: 0.2),
-                  backgroundColor: AppColors.background,
-                  labelStyle: TextStyle(
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w800,
-                    color: isSelected ? AppColors.emerald : AppColors.textPrimary,
-                  ),
-                  side: BorderSide(
-                    color: isSelected ? AppColors.emerald : AppColors.borderDark,
-                    width: 1.5,
-                  ),
-                  onSelected: (val) {
-                    if (val) {
-                      HapticFeedback.selectionClick();
-                      setState(() => _selectedSource = source);
-                    }
+                return InkWell(
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    setState(() => _selectedSource = source);
                   },
+                  borderRadius: BorderRadius.circular(14),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 150),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? AppColors.mintioMint.withValues(alpha: 0.2)
+                          : AppColors.mintioCardElevated,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: isSelected ? AppColors.mintioMint : AppColors.mintioBorder,
+                        width: isSelected ? 1.6 : 1.2,
+                      ),
+                    ),
+                    child: Text(
+                      source,
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                        color: isSelected ? AppColors.mintioMint : AppColors.mintioTextSecondary,
+                      ),
+                    ),
+                  ),
                 );
               }).toList(),
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: 18),
 
             // Date & Note Row
             Row(
@@ -322,6 +342,21 @@ class _QuickIncomeSheetState extends State<QuickIncomeSheet> {
                         initialDate: _selectedDate,
                         firstDate: DateTime(2020),
                         lastDate: DateTime(2030),
+                        builder: (context, child) {
+                          return Theme(
+                            data: ThemeData.dark().copyWith(
+                              colorScheme: const ColorScheme.dark(
+                                primary: AppColors.mintioIndigo,
+                                surface: AppColors.mintioCard,
+                                onSurface: AppColors.mintioTextPrimary,
+                              ),
+                              dialogTheme: const DialogThemeData(
+                                backgroundColor: AppColors.mintioCard,
+                              ),
+                            ),
+                            child: child!,
+                          );
+                        },
                       );
                       if (picked != null) {
                         setState(() => _selectedDate = picked);
@@ -329,22 +364,29 @@ class _QuickIncomeSheetState extends State<QuickIncomeSheet> {
                     },
                     borderRadius: BorderRadius.circular(14),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                       decoration: BoxDecoration(
-                        color: AppColors.background,
+                        color: AppColors.mintioMidnight,
                         borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: AppColors.borderDark, width: 1.5),
+                        border: Border.all(color: AppColors.mintioBorder, width: 1.2),
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.calendar_today_rounded, size: 16, color: AppColors.textSecondary),
+                          const Icon(
+                            Icons.calendar_today_rounded,
+                            size: 15,
+                            color: AppColors.mintioIndigoLight,
+                          ),
                           const SizedBox(width: 8),
-                          Text(
-                            dateFormatter.format(_selectedDate),
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.textPrimary,
+                          Expanded(
+                            child: Text(
+                              dateFormatter.format(_selectedDate),
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.mintioTextPrimary,
+                              ),
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                         ],
@@ -358,36 +400,62 @@ class _QuickIncomeSheetState extends State<QuickIncomeSheet> {
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12),
                     decoration: BoxDecoration(
-                      color: AppColors.background,
+                      color: AppColors.mintioMidnight,
                       borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: AppColors.borderDark, width: 1.5),
+                      border: Border.all(color: AppColors.mintioBorder, width: 1.2),
                     ),
                     child: TextField(
                       controller: _noteController,
+                      style: const TextStyle(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.mintioTextPrimary,
+                      ),
+                      cursorColor: AppColors.mintioIndigo,
                       decoration: const InputDecoration(
-                        hintText: 'บันทึกช่วยจำ (เช่น คืนค่าเทอม)',
-                        hintStyle: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                        hintText: 'บันทึกช่วยจำ (เช่น คืนค่าข้าว)',
+                        hintStyle: TextStyle(
+                          fontSize: 12,
+                          color: AppColors.mintioTextMuted,
+                        ),
                         border: InputBorder.none,
                         isDense: true,
-                        contentPadding: EdgeInsets.symmetric(vertical: 10),
+                        contentPadding: EdgeInsets.symmetric(vertical: 12),
                       ),
-                      style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600),
                     ),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 24),
 
-            // Submit Button
-            ArcadeButton(
+            // Submit Capsule Button
+            ElevatedButton(
               onPressed: _submit,
-              backgroundColor: AppColors.emerald,
-              shadowColor: const Color(0xFF0D6832),
-              textColor: Colors.white,
-              icon: Icons.check_circle_rounded,
-              label: 'บันทึกรายรับ',
-              height: 48,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.mintioMint,
+                foregroundColor: Colors.black,
+                elevation: 0,
+                minimumSize: const Size.fromHeight(50),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: const [
+                  Icon(Icons.check_circle_rounded, size: 20, color: Colors.black),
+                  SizedBox(width: 8),
+                  Text(
+                    'บันทึกรายรับ',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.black,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
         ),

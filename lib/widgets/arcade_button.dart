@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../core/theme/app_theme.dart';
 
 /// Tactile 3D push button with Duolingo / Arcade mechanical compression on tap
 class ArcadeButton extends StatefulWidget {
@@ -27,15 +28,15 @@ class ArcadeButton extends StatefulWidget {
     Color? backgroundColor,
     this.onPressed,
     Color? color,
-    this.shadowColor = const Color(0xFFCBD5E1),
+    this.shadowColor = AppColors.shadowDefault,
     this.borderColor,
-    this.borderWidth = 2.0,
+    this.borderWidth = 1.5,
     this.depth = 4.0,
     this.borderRadius,
     this.padding,
     this.width,
     this.height,
-  })  : color = backgroundColor ?? color ?? Colors.white,
+  })  : color = backgroundColor ?? color ?? AppColors.surface,
         assert(child != null || label != null, 'Either child or label must be provided');
 
   @override
@@ -64,8 +65,9 @@ class _ArcadeButtonState extends State<ArcadeButton> {
 
   @override
   Widget build(BuildContext context) {
-    final effectiveBorderRadius = widget.borderRadius ?? BorderRadius.circular(16);
-    final effectiveBorderColor = widget.borderColor ?? widget.shadowColor;
+    final effectiveBorderRadius = widget.borderRadius ?? BorderRadius.circular(20);
+    final effectiveBorderColor = widget.borderColor ?? AppColors.border;
+    final effectiveTextColor = widget.textColor ?? AppColors.textPrimary;
     final double currentOffset = _isPressed ? (widget.depth > 1 ? widget.depth - 1.0 : 0.0) : 0.0;
     final double currentShadowDepth = _isPressed ? 1.0 : widget.depth;
 
@@ -108,7 +110,7 @@ class _ArcadeButtonState extends State<ArcadeButton> {
                       Icon(
                         widget.icon,
                         size: 18,
-                        color: widget.textColor ?? Colors.black87,
+                        color: effectiveTextColor,
                       ),
                       const SizedBox(width: 6),
                     ],
@@ -118,7 +120,7 @@ class _ArcadeButtonState extends State<ArcadeButton> {
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w800,
-                          color: widget.textColor ?? Colors.black87,
+                          color: effectiveTextColor,
                         ),
                       ),
                   ],

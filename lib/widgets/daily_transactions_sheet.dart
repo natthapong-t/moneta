@@ -3,8 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import '../core/theme/app_theme.dart';
 import '../models/expense_card_item.dart';
-import 'arcade_button.dart';
-import 'arcade_card.dart';
 
 class DailyTransactionsSheet extends StatefulWidget {
   final DateTime date;
@@ -99,27 +97,27 @@ class _DailyTransactionsSheetState extends State<DailyTransactionsSheet> {
         maxHeight: MediaQuery.of(context).size.height * 0.85,
       ),
       decoration: const BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.mintioCard,
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
         border: Border(
-          top: BorderSide(color: AppColors.borderDark, width: 2.5),
-          left: BorderSide(color: AppColors.borderDark, width: 2.5),
-          right: BorderSide(color: AppColors.borderDark, width: 2.5),
+          top: BorderSide(color: AppColors.mintioBorder, width: 1.5),
+          left: BorderSide(color: AppColors.mintioBorder, width: 1.5),
+          right: BorderSide(color: AppColors.mintioBorder, width: 1.5),
         ),
       ),
       child: Column(
         children: [
           // Handle bar
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
           Container(
-            width: 48,
-            height: 5,
+            width: 42,
+            height: 4.5,
             decoration: BoxDecoration(
-              color: AppColors.borderDark.withValues(alpha: 0.3),
+              color: AppColors.mintioTextMuted.withValues(alpha: 0.4),
               borderRadius: BorderRadius.circular(10),
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
 
           // Header Row
           Padding(
@@ -135,29 +133,30 @@ class _DailyTransactionsSheetState extends State<DailyTransactionsSheet> {
                       style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w900,
-                        color: AppColors.textPrimary,
+                        color: AppColors.mintioTextPrimary,
                       ),
                     ),
-                    Text(
+                    const SizedBox(height: 2),
+                    const Text(
                       'สรุปบันทึกการเงินประจำวัน',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 12,
-                        color: AppColors.textSecondary,
-                        fontWeight: FontWeight.w600,
+                        color: AppColors.mintioTextSecondary,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                   ],
                 ),
                 IconButton(
                   onPressed: () => Navigator.of(context).pop(),
-                  icon: const Icon(Icons.close_rounded, color: AppColors.textSecondary),
+                  icon: const Icon(Icons.close_rounded, color: AppColors.mintioTextSecondary),
                 ),
               ],
             ),
           ),
           const SizedBox(height: 14),
 
-          // Income / Expense Summary Banner (Wallet Story style)
+          // Income / Expense Summary Banner
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Row(
@@ -165,11 +164,14 @@ class _DailyTransactionsSheetState extends State<DailyTransactionsSheet> {
                 // Income Badge
                 Expanded(
                   child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                    padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 14),
                     decoration: BoxDecoration(
-                      color: AppColors.emerald.withValues(alpha: 0.12),
+                      color: AppColors.mintioMint.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: AppColors.emerald, width: 1.5),
+                      border: Border.all(
+                        color: AppColors.mintioMint.withValues(alpha: 0.35),
+                        width: 1.2,
+                      ),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -178,8 +180,8 @@ class _DailyTransactionsSheetState extends State<DailyTransactionsSheet> {
                           'รายรับ',
                           style: TextStyle(
                             fontSize: 11,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.emerald,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.mintioMint,
                           ),
                         ),
                         const SizedBox(height: 2),
@@ -190,7 +192,7 @@ class _DailyTransactionsSheetState extends State<DailyTransactionsSheet> {
                           style: const TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w900,
-                            color: AppColors.emerald,
+                            color: AppColors.mintioMint,
                           ),
                         ),
                       ],
@@ -201,11 +203,14 @@ class _DailyTransactionsSheetState extends State<DailyTransactionsSheet> {
                 // Expense Badge
                 Expanded(
                   child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                    padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 14),
                     decoration: BoxDecoration(
-                      color: AppColors.vaultTributum.withValues(alpha: 0.12),
+                      color: AppColors.mintioMidnight,
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: AppColors.vaultTributum, width: 1.5),
+                      border: Border.all(
+                        color: AppColors.mintioBorder,
+                        width: 1.2,
+                      ),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -214,8 +219,8 @@ class _DailyTransactionsSheetState extends State<DailyTransactionsSheet> {
                           'รายจ่าย',
                           style: TextStyle(
                             fontSize: 11,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.vaultTributum,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.mintioTextSecondary,
                           ),
                         ),
                         const SizedBox(height: 2),
@@ -226,7 +231,7 @@ class _DailyTransactionsSheetState extends State<DailyTransactionsSheet> {
                           style: const TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w900,
-                            color: AppColors.vaultTributum,
+                            color: AppColors.mintioTextPrimary,
                           ),
                         ),
                       ],
@@ -257,10 +262,16 @@ class _DailyTransactionsSheetState extends State<DailyTransactionsSheet> {
           if (widget.pendingSlipsOnDate.isNotEmpty)
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
-              child: ArcadeCard(
-                backgroundColor: AppColors.gold.withValues(alpha: 0.15),
-                borderColor: AppColors.gold,
+              child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(
+                  color: AppColors.mintioMidnight,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: AppColors.mintioIndigo.withValues(alpha: 0.5),
+                    width: 1.2,
+                  ),
+                ),
                 child: Row(
                   children: [
                     const Text('🎴', style: TextStyle(fontSize: 20)),
@@ -273,31 +284,44 @@ class _DailyTransactionsSheetState extends State<DailyTransactionsSheet> {
                             'มีสลิปของวันนี้รอปัด ${widget.pendingSlipsOnDate.length} ใบ',
                             style: const TextStyle(
                               fontSize: 12.5,
-                              fontWeight: FontWeight.w900,
-                              color: AppColors.textPrimary,
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.mintioTextPrimary,
                             ),
                           ),
                           const Text(
-                            'แตะเพื่อเริ่มปัดเคลียร์ยอดของวันนี้นี้',
+                            'แตะเพื่อเริ่มปัดเคลียร์ยอดของวันนี้',
                             style: TextStyle(
                               fontSize: 11,
-                              color: AppColors.textSecondary,
+                              color: AppColors.mintioTextSecondary,
                             ),
                           ),
                         ],
                       ),
                     ),
                     if (widget.onSwipePending != null)
-                      ArcadeButton(
+                      ElevatedButton(
                         onPressed: () {
                           Navigator.of(context).pop();
                           widget.onSwipePending!();
                         },
-                        label: 'ปัดเลย',
-                        backgroundColor: AppColors.gold,
-                        textColor: Colors.black,
-                        height: 34,
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.mintioIndigo,
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                          minimumSize: Size.zero,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: const Text(
+                          'ปัดเลย',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
                       ),
                   ],
                 ),
@@ -311,14 +335,18 @@ class _DailyTransactionsSheetState extends State<DailyTransactionsSheet> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: const [
-                        Icon(Icons.inbox_rounded, size: 48, color: AppColors.textSecondary),
+                        Icon(
+                          Icons.inbox_rounded,
+                          size: 48,
+                          color: AppColors.mintioTextMuted,
+                        ),
                         SizedBox(height: 8),
                         Text(
                           'ไม่มีรายการในวันนี้',
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.bold,
-                            color: AppColors.textSecondary,
+                            color: AppColors.mintioTextSecondary,
                           ),
                         ),
                       ],
@@ -328,33 +356,39 @@ class _DailyTransactionsSheetState extends State<DailyTransactionsSheet> {
                     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
                     physics: const BouncingScrollPhysics(),
                     itemCount: displayedList.length,
-                    separatorBuilder: (_, index) => const SizedBox(height: 10),
+                    separatorBuilder: (_, index) => const SizedBox(height: 8),
                     itemBuilder: (context, index) {
                       final item = displayedList[index];
                       final isIncome = item.isIncome;
                       final cat = item.assignedCategory;
+                      final person = item.targetPerson;
 
-                      return ArcadeCard(
+                      return Container(
                         padding: const EdgeInsets.all(12),
-                        borderColor: isIncome
-                            ? AppColors.emerald.withValues(alpha: 0.5)
-                            : (cat?.color.withValues(alpha: 0.5) ?? AppColors.borderDark),
+                        decoration: BoxDecoration(
+                          color: AppColors.mintioCardElevated,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: AppColors.mintioBorder,
+                            width: 1.2,
+                          ),
+                        ),
                         child: Row(
                           children: [
                             // Category Icon / Bank Circle
                             Container(
-                              width: 44,
-                              height: 44,
+                              width: 40,
+                              height: 40,
                               decoration: BoxDecoration(
                                 color: isIncome
-                                    ? AppColors.emerald.withValues(alpha: 0.15)
-                                    : (cat?.bgColor ?? item.bankColor.withValues(alpha: 0.15)),
-                                borderRadius: BorderRadius.circular(14),
+                                    ? AppColors.mintioMint.withValues(alpha: 0.16)
+                                    : (cat?.color.withValues(alpha: 0.16) ?? item.bankColor.withValues(alpha: 0.16)),
+                                borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
                                   color: isIncome
-                                      ? AppColors.emerald
-                                      : (cat?.color ?? item.bankColor),
-                                  width: 1.5,
+                                      ? AppColors.mintioMint.withValues(alpha: 0.4)
+                                      : (cat?.color.withValues(alpha: 0.4) ?? item.bankColor),
+                                  width: 1.2,
                                 ),
                               ),
                               child: Icon(
@@ -362,9 +396,9 @@ class _DailyTransactionsSheetState extends State<DailyTransactionsSheet> {
                                     ? Icons.arrow_downward_rounded
                                     : (cat?.icon ?? Icons.receipt_long_rounded),
                                 color: isIncome
-                                    ? AppColors.emerald
+                                    ? AppColors.mintioMint
                                     : (cat?.color ?? item.bankColor),
-                                size: 22,
+                                size: 20,
                               ),
                             ),
                             const SizedBox(width: 12),
@@ -374,53 +408,75 @@ class _DailyTransactionsSheetState extends State<DailyTransactionsSheet> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(
-                                    item.receiverName.isNotEmpty
-                                        ? item.receiverName
-                                        : (isIncome ? 'รายรับ' : 'รายการใช้จ่าย'),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w800,
-                                      color: AppColors.textPrimary,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
                                   Row(
                                     children: [
-                                      if (item.note != null && item.note!.isNotEmpty) ...[
+                                      Expanded(
+                                        child: Text(
+                                          item.receiverName.isNotEmpty
+                                              ? item.receiverName
+                                              : (isIncome ? 'รายรับ' : 'รายการใช้จ่าย'),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(
+                                            fontSize: 13.5,
+                                            fontWeight: FontWeight.bold,
+                                            color: AppColors.mintioTextPrimary,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 6),
+                                      // Target Person Pill Badge
+                                      if (!isIncome)
                                         Container(
                                           padding: const EdgeInsets.symmetric(
-                                            horizontal: 7,
+                                            horizontal: 6,
                                             vertical: 2,
                                           ),
                                           decoration: BoxDecoration(
-                                            color: AppColors.background,
-                                            borderRadius: BorderRadius.circular(8),
+                                            color: person.color.withValues(alpha: 0.16),
+                                            borderRadius: BorderRadius.circular(10),
                                             border: Border.all(
-                                              color: AppColors.borderDark,
+                                              color: person.color.withValues(alpha: 0.35),
                                               width: 1,
                                             ),
                                           ),
-                                          child: Text(
-                                            item.note!,
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: const TextStyle(
-                                              fontSize: 10.5,
-                                              fontWeight: FontWeight.w700,
-                                              color: AppColors.textSecondary,
-                                            ),
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Icon(person.icon, size: 9, color: person.color),
+                                              const SizedBox(width: 2.5),
+                                              Text(
+                                                person.label,
+                                                style: TextStyle(
+                                                  fontSize: 9,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: person.color,
+                                                ),
+                                              ),
+                                            ],
                                           ),
                                         ),
-                                        const SizedBox(width: 6),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 3),
+                                  Row(
+                                    children: [
+                                      if (item.note != null && item.note!.isNotEmpty) ...[
+                                        Text(
+                                          '${item.note!} • ',
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(
+                                            fontSize: 10.5,
+                                            color: AppColors.mintioTextSecondary,
+                                          ),
+                                        ),
                                       ],
                                       Text(
                                         timeFormatter.format(item.dateTime),
                                         style: const TextStyle(
-                                          fontSize: 11,
-                                          color: AppColors.textSecondary,
+                                          fontSize: 10.5,
+                                          color: AppColors.mintioTextMuted,
                                         ),
                                       ),
                                     ],
@@ -428,6 +484,7 @@ class _DailyTransactionsSheetState extends State<DailyTransactionsSheet> {
                                 ],
                               ),
                             ),
+                            const SizedBox(width: 8),
 
                             // Amount & Delete
                             Column(
@@ -436,11 +493,11 @@ class _DailyTransactionsSheetState extends State<DailyTransactionsSheet> {
                                 Text(
                                   '${isIncome ? '+' : '-'}฿${currencyFormatter.format(item.amount)}',
                                   style: TextStyle(
-                                    fontSize: 14.5,
+                                    fontSize: 14,
                                     fontWeight: FontWeight.w900,
                                     color: isIncome
-                                        ? AppColors.emerald
-                                        : AppColors.vaultTributum,
+                                        ? AppColors.mintioMint
+                                        : AppColors.mintioTextPrimary,
                                   ),
                                 ),
                                 const SizedBox(height: 4),
@@ -450,12 +507,13 @@ class _DailyTransactionsSheetState extends State<DailyTransactionsSheet> {
                                     widget.onDeleteItem(item);
                                     setState(() {});
                                   },
+                                  borderRadius: BorderRadius.circular(8),
                                   child: const Padding(
-                                    padding: EdgeInsets.all(2),
+                                    padding: EdgeInsets.all(3),
                                     child: Icon(
                                       Icons.delete_outline_rounded,
-                                      size: 17,
-                                      color: AppColors.textSecondary,
+                                      size: 16,
+                                      color: AppColors.mintioTextMuted,
                                     ),
                                   ),
                                 ),
@@ -472,40 +530,77 @@ class _DailyTransactionsSheetState extends State<DailyTransactionsSheet> {
           Container(
             padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
             decoration: const BoxDecoration(
-              color: AppColors.surface,
+              color: AppColors.mintioCard,
               border: Border(
-                top: BorderSide(color: AppColors.borderDark, width: 1.5),
+                top: BorderSide(color: AppColors.mintioBorder, width: 1.2),
               ),
             ),
             child: Row(
               children: [
                 Expanded(
-                  child: ArcadeButton(
+                  child: ElevatedButton(
                     onPressed: () {
                       Navigator.of(context).pop();
                       widget.onAddIncome();
                     },
-                    label: '+ รายรับ',
-                    icon: Icons.add_circle_outline_rounded,
-                    backgroundColor: AppColors.emerald,
-                    shadowColor: const Color(0xFF0D6832),
-                    textColor: Colors.white,
-                    height: 44,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.mintioMint,
+                      foregroundColor: Colors.black,
+                      elevation: 0,
+                      minimumSize: const Size.fromHeight(46),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: const [
+                        Icon(Icons.add_circle_outline_rounded, size: 18, color: Colors.black),
+                        SizedBox(width: 6),
+                        Text(
+                          '+ รายรับ',
+                          style: TextStyle(
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.black,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: ArcadeButton(
+                  child: ElevatedButton(
                     onPressed: () {
                       Navigator.of(context).pop();
                       widget.onAddExpense();
                     },
-                    label: '+ รายจ่าย',
-                    icon: Icons.remove_circle_outline_rounded,
-                    backgroundColor: AppColors.vaultTributum,
-                    shadowColor: AppColors.vaultTributumShadow,
-                    textColor: Colors.white,
-                    height: 44,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.mintioCardElevated,
+                      foregroundColor: AppColors.mintioTextPrimary,
+                      elevation: 0,
+                      side: const BorderSide(color: AppColors.mintioBorder, width: 1.2),
+                      minimumSize: const Size.fromHeight(46),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: const [
+                        Icon(Icons.add_circle_outline_rounded, size: 18, color: AppColors.mintioCoral),
+                        SizedBox(width: 6),
+                        Text(
+                          '+ รายจ่าย',
+                          style: TextStyle(
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.mintioTextPrimary,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ],
@@ -524,19 +619,23 @@ class _DailyTransactionsSheetState extends State<DailyTransactionsSheet> {
         setState(() => _activeFilter = index);
       },
       borderRadius: BorderRadius.circular(14),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.gold : AppColors.background,
+          color: isSelected ? AppColors.mintioIndigo : AppColors.mintioMidnight,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppColors.borderDark, width: 1.5),
+          border: Border.all(
+            color: isSelected ? AppColors.mintioIndigo : AppColors.mintioBorder,
+            width: 1.2,
+          ),
         ),
         child: Text(
           label,
           style: TextStyle(
             fontSize: 11.5,
-            fontWeight: FontWeight.w800,
-            color: isSelected ? Colors.black : AppColors.textSecondary,
+            fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+            color: isSelected ? Colors.white : AppColors.mintioTextSecondary,
           ),
         ),
       ),

@@ -47,11 +47,11 @@ class VaultDetailsSheet extends StatelessWidget {
 
     return Container(
       constraints: BoxConstraints(
-        maxHeight: MediaQuery.of(context).size.height * 0.78,
+        maxHeight: MediaQuery.of(context).size.height * 0.80,
       ),
-      padding: const EdgeInsets.only(top: 14, left: 20, right: 20, bottom: 24),
+      padding: const EdgeInsets.only(top: 14, left: 20, right: 20, bottom: 28),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.mintioCard,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
         border: Border.all(
           color: category.color.withValues(alpha: 0.4),
@@ -64,11 +64,11 @@ class VaultDetailsSheet extends StatelessWidget {
           // Drag handle
           Center(
             child: Container(
-              width: 38,
-              height: 4,
+              width: 42,
+              height: 4.5,
               decoration: BoxDecoration(
-                color: AppColors.textMuted.withValues(alpha: 0.35),
-                borderRadius: BorderRadius.circular(2),
+                color: AppColors.mintioTextMuted.withValues(alpha: 0.4),
+                borderRadius: BorderRadius.circular(10),
               ),
             ),
           ),
@@ -83,10 +83,10 @@ class VaultDetailsSheet extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: category.color.withValues(alpha: 0.2),
+                      color: category.color.withValues(alpha: 0.18),
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: category.color.withValues(alpha: 0.5),
+                        color: category.color.withValues(alpha: 0.4),
                         width: 1.2,
                       ),
                     ),
@@ -104,18 +104,22 @@ class VaultDetailsSheet extends StatelessWidget {
                               fontSize: 18,
                               fontWeight: FontWeight.w900,
                               letterSpacing: 0.3,
-                              color: AppColors.marbleWhite,
+                              color: AppColors.mintioTextPrimary,
                             ),
                           ),
                           const SizedBox(width: 8),
                           Container(
                             padding: const EdgeInsets.symmetric(
-                              horizontal: 7,
-                              vertical: 2,
+                              horizontal: 8,
+                              vertical: 3,
                             ),
                             decoration: BoxDecoration(
                               color: category.color.withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(10),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: category.color.withValues(alpha: 0.4),
+                                width: 1,
+                              ),
                             ),
                             child: Text(
                               '${items.length} รายการ',
@@ -133,7 +137,8 @@ class VaultDetailsSheet extends StatelessWidget {
                         category.latinTitle,
                         style: const TextStyle(
                           fontSize: 12,
-                          color: AppColors.textSecondary,
+                          color: AppColors.mintioTextSecondary,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
                     ],
@@ -144,22 +149,22 @@ class VaultDetailsSheet extends StatelessWidget {
                 onPressed: () => Navigator.of(context).pop(),
                 icon: const Icon(
                   Icons.close_rounded,
-                  color: AppColors.textMuted,
+                  color: AppColors.mintioTextSecondary,
                 ),
               ),
             ],
           ),
 
-          const SizedBox(height: 14),
+          const SizedBox(height: 16),
 
-          // Total spent pill
+          // Total spent card
           Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
-              color: AppColors.background,
+              color: AppColors.mintioMidnight,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: category.color.withValues(alpha: 0.3)),
+              border: Border.all(color: category.color.withValues(alpha: 0.35), width: 1.2),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -168,14 +173,15 @@ class VaultDetailsSheet extends StatelessWidget {
                   'ยอดรวมในหมวดนี้',
                   style: TextStyle(
                     fontSize: 13,
-                    color: AppColors.textSecondary,
+                    color: AppColors.mintioTextSecondary,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
                 Text(
                   '฿ ${currencyFormatter.format(totalAmount)}',
                   style: TextStyle(
                     fontSize: 20,
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w900,
                     color: category.color,
                   ),
                 ),
@@ -195,7 +201,7 @@ class VaultDetailsSheet extends StatelessWidget {
                         Icon(
                           Icons.inbox_rounded,
                           size: 48,
-                          color: AppColors.textMuted.withValues(alpha: 0.4),
+                          color: AppColors.mintioTextMuted.withValues(alpha: 0.5),
                         ),
                         const SizedBox(height: 12),
                         const Text(
@@ -203,15 +209,15 @@ class VaultDetailsSheet extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.bold,
-                            color: AppColors.textMuted,
+                            color: AppColors.mintioTextPrimary,
                           ),
                         ),
                         const SizedBox(height: 4),
                         const Text(
-                          'ลากหรือสะบัดสลิปมาที่มุมนี้เพื่อจัดหมวดหมู่',
+                          'ปัดหรือสะบัดสลิปมาที่มุมนี้เพื่อจัดหมวดหมู่',
                           style: TextStyle(
                             fontSize: 12,
-                            color: AppColors.textMuted,
+                            color: AppColors.mintioTextSecondary,
                           ),
                         ),
                       ],
@@ -223,14 +229,16 @@ class VaultDetailsSheet extends StatelessWidget {
                         const SizedBox(height: 10),
                     itemBuilder: (context, index) {
                       final item = items[index];
+                      final person = item.targetPerson;
+
                       return Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: AppColors.background,
+                          color: AppColors.mintioCardElevated,
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
-                            color: AppColors.surfaceLight,
-                            width: 1,
+                            color: AppColors.mintioBorder,
+                            width: 1.2,
                           ),
                         ),
                         child: Row(
@@ -251,15 +259,52 @@ class VaultDetailsSheet extends StatelessWidget {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(
-                                    item.receiverName,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(
-                                      fontSize: 13.5,
-                                      fontWeight: FontWeight.bold,
-                                      color: AppColors.marbleWhite,
-                                    ),
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: Text(
+                                          item.receiverName,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(
+                                            fontSize: 13.5,
+                                            fontWeight: FontWeight.bold,
+                                            color: AppColors.mintioTextPrimary,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 6),
+                                      // Target Person Pill Badge
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 6,
+                                          vertical: 2,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: person.color.withValues(alpha: 0.16),
+                                          borderRadius: BorderRadius.circular(10),
+                                          border: Border.all(
+                                            color: person.color.withValues(alpha: 0.4),
+                                            width: 1,
+                                          ),
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Icon(person.icon, size: 10, color: person.color),
+                                            const SizedBox(width: 3),
+                                            Text(
+                                              person.label,
+                                              style: TextStyle(
+                                                fontSize: 9.5,
+                                                fontWeight: FontWeight.bold,
+                                                color: person.color,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                   const SizedBox(height: 3),
                                   Row(
@@ -277,7 +322,7 @@ class VaultDetailsSheet extends StatelessWidget {
                                         '• ${dateFormatter.format(item.dateTime)}',
                                         style: const TextStyle(
                                           fontSize: 10.5,
-                                          color: AppColors.textMuted,
+                                          color: AppColors.mintioTextMuted,
                                         ),
                                       ),
                                     ],
@@ -289,16 +334,16 @@ class VaultDetailsSheet extends StatelessWidget {
                                       item.note!,
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
-                                      style: TextStyle(
+                                      style: const TextStyle(
                                         fontSize: 11,
-                                        color: AppColors.textSecondary
-                                            .withValues(alpha: 0.8),
+                                        color: AppColors.mintioTextSecondary,
                                       ),
                                     ),
                                   ],
                                 ],
                               ),
                             ),
+                            const SizedBox(width: 8),
 
                             // Amount & Restore Action
                             Column(
@@ -309,21 +354,29 @@ class VaultDetailsSheet extends StatelessWidget {
                                   style: const TextStyle(
                                     fontSize: 14.5,
                                     fontWeight: FontWeight.bold,
-                                    color: AppColors.goldBright,
+                                    color: AppColors.mintioTextPrimary,
                                   ),
                                 ),
-                                const SizedBox(height: 4),
+                                const SizedBox(height: 6),
                                 InkWell(
                                   onTap: () {
                                     HapticFeedback.lightImpact();
                                     onRestoreItem(item);
                                     Navigator.of(context).pop();
                                   },
-                                  borderRadius: BorderRadius.circular(6),
-                                  child: Padding(
+                                  borderRadius: BorderRadius.circular(10),
+                                  child: Container(
                                     padding: const EdgeInsets.symmetric(
-                                      horizontal: 4,
-                                      vertical: 2,
+                                      horizontal: 8,
+                                      vertical: 3,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.mintioMidnight,
+                                      borderRadius: BorderRadius.circular(10),
+                                      border: Border.all(
+                                        color: AppColors.mintioBorder,
+                                        width: 1,
+                                      ),
                                     ),
                                     child: Row(
                                       mainAxisSize: MainAxisSize.min,
@@ -331,14 +384,15 @@ class VaultDetailsSheet extends StatelessWidget {
                                         Icon(
                                           Icons.replay_rounded,
                                           size: 12,
-                                          color: AppColors.textMuted,
+                                          color: AppColors.mintioIndigoLight,
                                         ),
                                         SizedBox(width: 3),
                                         Text(
                                           'ปัดใหม่',
                                           style: TextStyle(
                                             fontSize: 10.5,
-                                            color: AppColors.textMuted,
+                                            fontWeight: FontWeight.bold,
+                                            color: AppColors.mintioIndigoLight,
                                           ),
                                         ),
                                       ],

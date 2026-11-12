@@ -173,12 +173,12 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
         backgroundColor: AppColors.surface,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(14),
-          side: const BorderSide(color: AppColors.gold, width: 1.5),
+          borderRadius: BorderRadius.circular(16),
+          side: const BorderSide(color: AppColors.mintioIndigo, width: 1.5),
         ),
         content: const Row(
           children: [
-            Icon(Icons.restart_alt_rounded, color: AppColors.gold, size: 20),
+            Icon(Icons.restart_alt_rounded, color: AppColors.mintioIndigo, size: 20),
             SizedBox(width: 10),
             Expanded(
               child: Text(
@@ -209,12 +209,12 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
         backgroundColor: AppColors.surface,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(14),
-          side: const BorderSide(color: Color(0xFFEF4444), width: 1.5),
+          borderRadius: BorderRadius.circular(16),
+          side: const BorderSide(color: AppColors.expenseRed, width: 1.5),
         ),
         content: const Row(
           children: [
-            Icon(Icons.delete_sweep_rounded, color: Color(0xFFEF4444), size: 20),
+            Icon(Icons.delete_sweep_rounded, color: AppColors.expenseRed, size: 20),
             SizedBox(width: 10),
             Expanded(
               child: Text(
@@ -274,6 +274,7 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
     final storage = ExpenseStorageService.instance;
     final processedRefs = await storage.getProcessedReferenceNumbers();
     final cachedAssetIds = await storage.getScannedAssetIds();
+    final historyDays = await storage.getScanHistoryDays();
 
     final knownRefs = <String>{
       ...processedRefs,
@@ -293,6 +294,7 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
     _scanSubscription = _slipParser
         .streamGallerySlips(
           maxScan: null,
+          historyDays: historyDays,
           knownReferenceNos: knownRefs,
           knownImagePaths: knownPaths,
           knownAssetIds: cachedAssetIds,
@@ -391,15 +393,15 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
         backgroundColor: AppColors.surface,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(14),
-          side: const BorderSide(color: AppColors.gold),
+          borderRadius: BorderRadius.circular(16),
+          side: const BorderSide(color: AppColors.border, width: 1.5),
         ),
         content: Text(
           found > 0
               ? 'กวาดตรวจเสร็จสิ้น! พบสลิปใหม่ $found ใบพร้อมให้ปัดแล้ว'
               : 'กวาดตรวจคลังภาพครบแล้ว ไม่พบสลิปธนาคารใหม่',
           style: const TextStyle(
-            color: AppColors.marbleWhite,
+            color: AppColors.textPrimary,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -436,8 +438,8 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
             backgroundColor: AppColors.surface,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(14),
-              side: const BorderSide(color: AppColors.emerald, width: 2),
+              borderRadius: BorderRadius.circular(16),
+              side: const BorderSide(color: AppColors.mintioMint, width: 1.5),
             ),
             content: Row(
               children: [
@@ -485,7 +487,7 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
     if (_isLoading) {
       return const Scaffold(
         backgroundColor: AppColors.background,
-        body: Center(child: CircularProgressIndicator(color: AppColors.gold)),
+        body: Center(child: CircularProgressIndicator(color: AppColors.mintioIndigo)),
       );
     }
 
@@ -582,14 +584,14 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
                             color: AppColors.surface,
                             borderRadius: BorderRadius.circular(20),
                             border: Border.all(
-                              color: AppColors.vaultQuadrigaShadow,
-                              width: 2.0,
+                              color: AppColors.border,
+                              width: 1.5,
                             ),
                             boxShadow: const [
                               BoxShadow(
-                                color: AppColors.vaultQuadrigaShadow,
+                                color: AppColors.shadowDefault,
                                 offset: Offset(0, 3),
-                                blurRadius: 0,
+                                blurRadius: 6,
                               ),
                             ],
                           ),
@@ -601,7 +603,7 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
                                 height: 13,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2.2,
-                                  color: AppColors.vaultQuadriga,
+                                  color: AppColors.mintioIndigo,
                                 ),
                               ),
                               const SizedBox(width: 8),
@@ -634,14 +636,14 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
                           color: AppColors.surface,
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(
-                            color: AppColors.vaultQuadrigaShadow,
-                            width: 2.0,
+                            color: AppColors.border,
+                            width: 1.5,
                           ),
                           boxShadow: const [
                             BoxShadow(
-                              color: AppColors.vaultQuadrigaShadow,
+                              color: AppColors.shadowDefault,
                               offset: Offset(0, 3),
-                              blurRadius: 0,
+                              blurRadius: 6,
                             ),
                           ],
                         ),
@@ -652,7 +654,7 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
                               height: 15,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2.2,
-                                color: AppColors.vaultQuadriga,
+                                color: AppColors.mintioIndigo,
                               ),
                             ),
                             const SizedBox(width: 10),
@@ -710,7 +712,7 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
                                 child: Icon(
                                   Icons.close_rounded,
                                   size: 18,
-                                  color: Color(0xFFEF4444),
+                                  color: AppColors.expenseRed,
                                 ),
                               ),
                             ),
@@ -720,11 +722,47 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
               ),
             ),
 
-          // Duolingo-Style Attached Bottom Navigation Bar (Light Mode)
+          // Mintio Signature Floating Quick Entry Pen Button
           Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
+            right: 20,
+            bottom: 92,
+            child: GestureDetector(
+              onTap: () {
+                HapticFeedback.mediumImpact();
+                _openQuickAddSheet();
+              },
+              child: Container(
+                width: 52,
+                height: 52,
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: AppColors.border,
+                    width: 1.5,
+                  ),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: AppColors.shadowDefault,
+                      offset: Offset(0, 4),
+                      blurRadius: 10,
+                    ),
+                  ],
+                ),
+                child: const Icon(
+                  Icons.edit_rounded,
+                  color: AppColors.mintioIndigo,
+                  size: 24,
+                ),
+              ),
+            ),
+          ),
+
+          // Mintio-Style Floating Frosted Pill Navigation Bar
+          Positioned(
+            left: 20,
+            right: 20,
+            bottom: 16,
             child: _buildDuolingoBottomBar(),
           ),
         ],
@@ -734,46 +772,45 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
 
   Widget _buildDuolingoBottomBar() {
     return Container(
-      decoration: const BoxDecoration(
-        color: AppColors.surface, // Pure White (#FFFFFF)
-        border: Border(
-          top: BorderSide(
-            color: Color(0xFFE2E8F0), // Crisp 2px top border
-            width: 2.0,
-          ),
+      height: 64,
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(32),
+        border: Border.all(
+          color: AppColors.border,
+          width: 1.5,
         ),
+        boxShadow: const [
+          BoxShadow(
+            color: AppColors.shadowDefault,
+            offset: Offset(0, 8),
+            blurRadius: 20,
+            spreadRadius: 0,
+          ),
+        ],
       ),
-      child: SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _buildNavItem(
-                index: 0,
-                icon: Icons.cottage_rounded,
-                iconColor: const Color(0xFFFF9600), // Duolingo warm orange/gold house
-              ),
-              _buildNavItem(
-                index: 1,
-                icon: Icons.style_rounded,
-                iconColor: const Color(0xFF1CB0F6), // Duolingo Electric Sky Blue
-                badgeCount: _pendingCards.length,
-              ),
-              _buildNavItem(
-                index: 2,
-                icon: Icons.receipt_long_rounded,
-                iconColor: const Color(0xFFCE82FF), // Playful Lilac Purple
-              ),
-              _buildNavItem(
-                index: 3,
-                icon: Icons.pie_chart_rounded,
-                iconColor: const Color(0xFF58CC02), // Duolingo Lime Green
-              ),
-            ],
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          _buildNavItem(
+            index: 0,
+            icon: Icons.flare_rounded,
           ),
-        ),
+          _buildNavItem(
+            index: 1,
+            icon: Icons.view_carousel_rounded,
+            badgeCount: _pendingCards.length,
+          ),
+          _buildNavItem(
+            index: 2,
+            icon: Icons.receipt_long_rounded,
+          ),
+          _buildNavItem(
+            index: 3,
+            icon: Icons.show_chart_rounded,
+          ),
+        ],
       ),
     );
   }
@@ -781,7 +818,6 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
   Widget _buildNavItem({
     required int index,
     required IconData icon,
-    required Color iconColor,
     int? badgeCount,
   }) {
     final bool isSelected = _currentIndex == index;
@@ -795,76 +831,63 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
       },
       behavior: HitTestBehavior.opaque,
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 160),
-        curve: Curves.easeOutBack,
-        width: 66,
-        height: 48,
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOutCubic,
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
         decoration: BoxDecoration(
-          // Duolingo Signature Selection: Crisp Sky Blue Border + Soft Tinted Fill
-          color: isSelected ? const Color(0xFFE8F7FE) : Colors.transparent,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: isSelected ? const Color(0xFF1CB0F6) : Colors.transparent,
-            width: 2.2,
-          ),
+          color: isSelected
+              ? AppColors.mintioIndigo.withValues(alpha: 0.16)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(24),
         ),
-        child: Center(
-          child: Stack(
-            clipBehavior: Clip.none,
-            alignment: Alignment.center,
-            children: [
-              AnimatedScale(
-                scale: isSelected ? 1.08 : 0.95,
-                duration: const Duration(milliseconds: 160),
-                curve: Curves.easeOutBack,
-                child: Icon(
-                  icon,
-                  size: 28,
-                  color: isSelected
-                      ? iconColor
-                      : iconColor.withValues(alpha: 0.85),
-                ),
+        child: Stack(
+          clipBehavior: Clip.none,
+          alignment: Alignment.center,
+          children: [
+            AnimatedScale(
+              scale: isSelected ? 1.08 : 0.95,
+              duration: const Duration(milliseconds: 200),
+              curve: Curves.easeOutCubic,
+              child: Icon(
+                icon,
+                size: 26,
+                color: isSelected
+                    ? AppColors.mintioIndigo
+                    : AppColors.textSecondary,
               ),
-              if (badgeCount != null && badgeCount > 0)
-                Positioned(
-                  top: -5,
-                  right: -8,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 5,
-                      vertical: 1.5,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.vaultTaverna,
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: Colors.white, width: 1.8),
-                      boxShadow: const [
-                        BoxShadow(
-                          color: AppColors.vaultTavernaShadow,
-                          offset: Offset(0, 1),
-                          blurRadius: 0,
-                        ),
-                      ],
-                    ),
-                    constraints: const BoxConstraints(
-                      minWidth: 16,
-                      minHeight: 16,
-                    ),
-                    child: Center(
-                      child: Text(
-                        badgeCount > 99 ? '99+' : '$badgeCount',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 9.5,
-                          fontWeight: FontWeight.w900,
-                          height: 1,
-                        ),
+            ),
+            if (badgeCount != null && badgeCount > 0)
+              Positioned(
+                top: -5,
+                right: -10,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 5,
+                    vertical: 1.5,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.expenseRed,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: AppColors.surface, width: 1.5),
+                  ),
+                  constraints: const BoxConstraints(
+                    minWidth: 16,
+                    minHeight: 16,
+                  ),
+                  child: Center(
+                    child: Text(
+                      badgeCount > 99 ? '99+' : '$badgeCount',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 9.5,
+                        fontWeight: FontWeight.w900,
+                        height: 1,
                       ),
                     ),
                   ),
                 ),
-            ],
-          ),
+              ),
+          ],
         ),
       ),
     );
@@ -877,21 +900,31 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.surface,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-          side: const BorderSide(color: AppColors.gold),
+          borderRadius: BorderRadius.circular(22),
+          side: const BorderSide(color: AppColors.border, width: 1.5),
         ),
         title: Text(
           item.receiverName,
-          style: const TextStyle(color: AppColors.marbleWhite, fontSize: 16),
+          style: const TextStyle(
+            color: AppColors.textPrimary,
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         content: Text(
-          'ยอดเงิน: ฿ ${item.amount.toStringAsFixed(2)}\nธนาคาร: ${item.bankName}\nเลขที่อ้างอิง: ${item.referenceNo}',
+          'ยอดเงิน: ฿${item.amount.toStringAsFixed(2)}\nธนาคาร: ${item.bankName}\nเลขที่อ้างอิง: ${item.referenceNo}',
           style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('ปิด', style: TextStyle(color: AppColors.gold)),
+            child: const Text(
+              'ปิด',
+              style: TextStyle(
+                color: AppColors.mintioIndigo,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
         ],
       ),

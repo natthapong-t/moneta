@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import '../core/theme/app_theme.dart';
 import '../models/expense_card_item.dart';
-import 'arcade_card.dart';
 
 class ArcadeCalendarView extends StatefulWidget {
   final List<ExpenseCardItem> transactions;
@@ -65,6 +64,7 @@ class _ArcadeCalendarViewState extends State<ArcadeCalendarView> {
     final Map<int, double> dailyIncome = {};
     final Map<int, double> dailyExpense = {};
     final Map<int, int> dailyPendingCount = {};
+    final Map<int, Set<Color>> dailyCategoryColors = {};
 
     for (final t in monthTransactions) {
       final day = t.dateTime.day;
@@ -74,6 +74,9 @@ class _ArcadeCalendarViewState extends State<ArcadeCalendarView> {
       } else {
         monthExpense += t.amount;
         dailyExpense[day] = (dailyExpense[day] ?? 0) + t.amount;
+        if (t.assignedCategory != null) {
+          dailyCategoryColors.putIfAbsent(day, () => <Color>{}).add(t.assignedCategory!.color);
+        }
       }
     }
 
@@ -112,65 +115,82 @@ class _ArcadeCalendarViewState extends State<ArcadeCalendarView> {
             children: [
               IconButton(
                 onPressed: _prevMonth,
-                icon: const Icon(Icons.chevron_left_rounded, color: AppColors.textPrimary, size: 28),
+                icon: const Icon(
+                  Icons.chevron_left_rounded,
+                  color: AppColors.mintioTextSecondary,
+                  size: 26,
+                ),
               ),
               Row(
                 children: [
-                  const Icon(Icons.calendar_month_rounded, color: AppColors.gold, size: 20),
+                  const Icon(
+                    Icons.calendar_month_rounded,
+                    color: AppColors.mintioIndigo,
+                    size: 19,
+                  ),
                   const SizedBox(width: 8),
                   Text(
                     monthFormatter.format(_currentMonth),
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w900,
-                      color: AppColors.textPrimary,
+                      color: AppColors.mintioTextPrimary,
                     ),
                   ),
                 ],
               ),
               IconButton(
                 onPressed: _nextMonth,
-                icon: const Icon(Icons.chevron_right_rounded, color: AppColors.textPrimary, size: 28),
+                icon: const Icon(
+                  Icons.chevron_right_rounded,
+                  color: AppColors.mintioTextSecondary,
+                  size: 26,
+                ),
               ),
             ],
           ),
           const SizedBox(height: 8),
 
-          // Monthly Summary Banner (Wallet Story style)
-          ArcadeCard(
+          // Monthly Summary Banner
+          Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: AppColors.mintioCard,
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: AppColors.mintioBorder, width: 1.2),
+            ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
                 _buildSummaryItem(
                   title: 'รายรับ',
                   amount: '+฿${shortFormatter.format(monthIncome)}',
-                  color: AppColors.emerald,
+                  color: AppColors.mintioMint,
                 ),
-                Container(width: 1.5, height: 32, color: AppColors.borderDark),
+                Container(width: 1, height: 28, color: AppColors.mintioBorder),
                 _buildSummaryItem(
                   title: 'รายจ่าย',
                   amount: '-฿${shortFormatter.format(monthExpense)}',
-                  color: AppColors.vaultTributum,
+                  color: AppColors.mintioTextPrimary,
                 ),
-                Container(width: 1.5, height: 32, color: AppColors.borderDark),
+                Container(width: 1, height: 28, color: AppColors.mintioBorder),
                 _buildSummaryItem(
                   title: 'คงเหลือ',
                   amount: '฿${shortFormatter.format(netBalance)}',
-                  color: netBalance >= 0 ? AppColors.gold : AppColors.vaultTributum,
+                  color: netBalance >= 0 ? AppColors.mintioMint : AppColors.expenseRed,
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 12),
 
           // Weekday Labels (จ. อ. พ. พฤ. ศ. ส. อา.)
           Container(
-            padding: const EdgeInsets.symmetric(vertical: 6),
+            padding: const EdgeInsets.symmetric(vertical: 8),
             decoration: BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppColors.borderDark, width: 1.5),
+              color: AppColors.mintioCard,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: AppColors.mintioBorder, width: 1.2),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -187,29 +207,22 @@ class _ArcadeCalendarViewState extends State<ArcadeCalendarView> {
           ),
           const SizedBox(height: 8),
 
-          // Calendar Grid
+          // Calendar Grid Container
           Container(
             decoration: BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: AppColors.borderDark, width: 2),
-              boxShadow: const [
-                BoxShadow(
-                  color: AppColors.shadowDefault,
-                  offset: Offset(0, 4),
-                  blurRadius: 0,
-                ),
-              ],
+              color: AppColors.mintioCard,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: AppColors.mintioBorder, width: 1.2),
             ),
-            padding: const EdgeInsets.all(6),
+            padding: const EdgeInsets.all(8),
             child: GridView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: totalCells,
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 7,
-                mainAxisSpacing: 4,
-                crossAxisSpacing: 4,
+                mainAxisSpacing: 5,
+                crossAxisSpacing: 5,
                 childAspectRatio: 0.82,
               ),
               itemBuilder: (context, index) {
@@ -219,8 +232,8 @@ class _ArcadeCalendarViewState extends State<ArcadeCalendarView> {
                 if (!isValidDay) {
                   return Container(
                     decoration: BoxDecoration(
-                      color: AppColors.background.withValues(alpha: 0.3),
-                      borderRadius: BorderRadius.circular(8),
+                      color: AppColors.mintioMidnight.withValues(alpha: 0.3),
+                      borderRadius: BorderRadius.circular(10),
                     ),
                   );
                 }
@@ -237,6 +250,7 @@ class _ArcadeCalendarViewState extends State<ArcadeCalendarView> {
                 final dayInc = dailyIncome[dayNumber] ?? 0;
                 final dayExp = dailyExpense[dayNumber] ?? 0;
                 final pendingCount = dailyPendingCount[dayNumber] ?? 0;
+                final categoryDots = dailyCategoryColors[dayNumber] ?? {};
 
                 return InkWell(
                   onTap: () {
@@ -244,21 +258,22 @@ class _ArcadeCalendarViewState extends State<ArcadeCalendarView> {
                     setState(() => _selectedDate = thisDate);
                     widget.onDateSelected(thisDate);
                   },
-                  borderRadius: BorderRadius.circular(10),
-                  child: Container(
+                  borderRadius: BorderRadius.circular(12),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 150),
                     decoration: BoxDecoration(
                       color: isSelected
-                          ? AppColors.gold.withValues(alpha: 0.2)
-                          : (isToday ? AppColors.surface : AppColors.background),
-                      borderRadius: BorderRadius.circular(10),
+                          ? AppColors.mintioIndigo.withValues(alpha: 0.22)
+                          : (isToday ? AppColors.mintioCardElevated : AppColors.mintioMidnight),
+                      borderRadius: BorderRadius.circular(12),
                       border: Border.all(
                         color: isSelected
-                            ? AppColors.gold
-                            : (isToday ? AppColors.vaultQuadriga : AppColors.borderDark.withValues(alpha: 0.4)),
-                        width: isSelected || isToday ? 2 : 1,
+                            ? AppColors.mintioIndigo
+                            : (isToday ? AppColors.mintioIndigoLight.withValues(alpha: 0.6) : AppColors.mintioBorder.withValues(alpha: 0.6)),
+                        width: isSelected ? 2 : (isToday ? 1.5 : 1),
                       ),
                     ),
-                    padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 3),
+                    padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
@@ -269,13 +284,13 @@ class _ArcadeCalendarViewState extends State<ArcadeCalendarView> {
                             Text(
                               '$dayNumber',
                               style: TextStyle(
-                                fontSize: 11,
+                                fontSize: 11.5,
                                 fontWeight: isToday || isSelected
                                     ? FontWeight.w900
                                     : FontWeight.w700,
                                 color: isToday
-                                    ? AppColors.vaultQuadriga
-                                    : AppColors.textPrimary,
+                                    ? AppColors.mintioIndigoLight
+                                    : AppColors.mintioTextPrimary,
                               ),
                             ),
                             if (pendingCount > 0) ...[
@@ -283,7 +298,7 @@ class _ArcadeCalendarViewState extends State<ArcadeCalendarView> {
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 1),
                                 decoration: BoxDecoration(
-                                  color: AppColors.gold,
+                                  color: AppColors.mintioIndigo,
                                   borderRadius: BorderRadius.circular(6),
                                 ),
                                 child: Text(
@@ -291,16 +306,37 @@ class _ArcadeCalendarViewState extends State<ArcadeCalendarView> {
                                   style: const TextStyle(
                                     fontSize: 8,
                                     fontWeight: FontWeight.w900,
-                                    color: Colors.black,
+                                    color: Colors.white,
                                   ),
                                 ),
                               ),
                             ],
                           ],
                         ),
+
+                        // Category Dots
+                        if (categoryDots.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 2),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: categoryDots.take(3).map((col) {
+                                return Container(
+                                  width: 4,
+                                  height: 4,
+                                  margin: const EdgeInsets.symmetric(horizontal: 1),
+                                  decoration: BoxDecoration(
+                                    color: col,
+                                    shape: BoxShape.circle,
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+                          ),
+
                         const Spacer(),
 
-                        // Income (Green)
+                        // Income (Mint Green)
                         if (dayInc > 0)
                           FittedBox(
                             fit: BoxFit.scaleDown,
@@ -309,13 +345,13 @@ class _ArcadeCalendarViewState extends State<ArcadeCalendarView> {
                               style: const TextStyle(
                                 fontSize: 9,
                                 fontWeight: FontWeight.w900,
-                                color: AppColors.emerald,
+                                color: AppColors.mintioMint,
                                 height: 1.1,
                               ),
                             ),
                           ),
 
-                        // Expense (Red)
+                        // Expense (Crisp White/Coral)
                         if (dayExp > 0)
                           FittedBox(
                             fit: BoxFit.scaleDown,
@@ -324,7 +360,7 @@ class _ArcadeCalendarViewState extends State<ArcadeCalendarView> {
                               style: const TextStyle(
                                 fontSize: 9,
                                 fontWeight: FontWeight.w900,
-                                color: AppColors.vaultTributum,
+                                color: AppColors.mintioTextSecondary,
                                 height: 1.1,
                               ),
                             ),
@@ -336,6 +372,7 @@ class _ArcadeCalendarViewState extends State<ArcadeCalendarView> {
               },
             ),
           ),
+          const SizedBox(height: 16),
         ],
       ),
     );
@@ -352,8 +389,8 @@ class _ArcadeCalendarViewState extends State<ArcadeCalendarView> {
           title,
           style: const TextStyle(
             fontSize: 11,
-            fontWeight: FontWeight.w700,
-            color: AppColors.textSecondary,
+            fontWeight: FontWeight.w600,
+            color: AppColors.mintioTextSecondary,
           ),
         ),
         const SizedBox(height: 2),
@@ -385,8 +422,8 @@ class _WeekdayLabel extends StatelessWidget {
           text,
           style: TextStyle(
             fontSize: 11.5,
-            fontWeight: FontWeight.w800,
-            color: isWeekend ? AppColors.vaultTributum : AppColors.textSecondary,
+            fontWeight: FontWeight.w700,
+            color: isWeekend ? AppColors.mintioCoral : AppColors.mintioTextSecondary,
           ),
         ),
       ),

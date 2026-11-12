@@ -27,7 +27,7 @@ class ArcadeProgressBar extends StatelessWidget {
     final effectiveProgressColor = progressColor ??
         (clampedValue > 0.85
             ? AppColors.waxSealRed
-            : (clampedValue > 0.65 ? AppColors.gold : const Color(0xFF10B981)));
+            : (clampedValue > 0.65 ? AppColors.mintioIndigo : const Color(0xFF10B981)));
 
     return Container(
       height: height,

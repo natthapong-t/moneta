@@ -17,12 +17,13 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
   final _amountController = TextEditingController();
   final _noteController = TextEditingController();
   String _selectedSource = 'เงินสด';
-  Color _sourceColor = AppColors.gold;
+  Color _sourceColor = AppColors.mintioIndigo;
+  TargetPerson _selectedPerson = TargetPerson.myself;
 
   final List<Map<String, dynamic>> _sources = [
     {
       'name': 'เงินสด',
-      'color': AppColors.gold,
+      'color': AppColors.mintioIndigo,
       'icon': Icons.payments_rounded,
     },
     {
@@ -67,6 +68,7 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
       bankColor: _sourceColor,
       referenceNo: 'MANUAL-${DateTime.now().millisecondsSinceEpoch.toString().substring(6)}',
       note: 'บันทึกด่วน',
+      targetPerson: _selectedPerson,
     );
 
     widget.onCardCreated(newItem);
@@ -117,13 +119,13 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: AppColors.gold.withValues(alpha: 0.2),
+                      color: AppColors.mintioIndigo.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: AppColors.goldShadow, width: 1.5),
+                      border: Border.all(color: AppColors.mintioIndigo, width: 1.5),
                     ),
                     child: const Icon(
                       Icons.flash_on_rounded,
-                      color: AppColors.goldShadow,
+                      color: AppColors.mintioIndigo,
                       size: 20,
                     ),
                   ),
@@ -181,7 +183,7 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
                   style: TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.w900,
-                    color: AppColors.goldShadow,
+                    color: AppColors.mintioIndigo,
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -299,7 +301,7 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
                             icon,
                             size: 16,
                             color: isSelected
-                                ? (color == AppColors.gold ? Colors.black87 : Colors.white)
+                                ? Colors.white
                                 : AppColors.textSecondary,
                           ),
                           const SizedBox(width: 5),
@@ -309,8 +311,79 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
                               fontSize: 12.5,
                               fontWeight: FontWeight.w900,
                               color: isSelected
-                                  ? (color == AppColors.gold ? Colors.black87 : Colors.white)
+                                  ? Colors.white
                                   : AppColors.textPrimary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+          const SizedBox(height: 16),
+
+          // Mintio Style: จ่ายให้ใครนะ (Target Person Selector)
+          const Text(
+            'จ่ายให้ใครนะ',
+            style: TextStyle(
+              fontSize: 12.5,
+              fontWeight: FontWeight.w800,
+              color: AppColors.textSecondary,
+            ),
+          ),
+          const SizedBox(height: 8),
+
+          Row(
+            children: TargetPerson.values.map((p) {
+              final isSelected = _selectedPerson == p;
+              return Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: InkWell(
+                    onTap: () {
+                      HapticFeedback.selectionClick();
+                      setState(() {
+                        _selectedPerson = p;
+                      });
+                    },
+                    borderRadius: BorderRadius.circular(14),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 150),
+                      padding: const EdgeInsets.symmetric(vertical: 9),
+                      decoration: BoxDecoration(
+                        color: isSelected ? p.color : AppColors.surface,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: isSelected ? p.color : AppColors.borderDark,
+                          width: 2.0,
+                        ),
+                        boxShadow: [
+                          if (isSelected)
+                            BoxShadow(
+                              color: p.color.withValues(alpha: 0.35),
+                              offset: const Offset(0, 3),
+                              blurRadius: 0,
+                            ),
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            p.icon,
+                            size: 15,
+                            color: isSelected ? Colors.white : AppColors.textSecondary,
+                          ),
+                          const SizedBox(width: 5),
+                          Text(
+                            p.label,
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w900,
+                              color: isSelected ? Colors.white : AppColors.textPrimary,
                             ),
                           ),
                         ],
@@ -327,10 +400,10 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
           ArcadeButton(
             onPressed: _submit,
             width: double.infinity,
-            backgroundColor: AppColors.gold,
-            shadowColor: AppColors.goldShadow,
-            borderColor: AppColors.goldShadow,
-            textColor: Colors.black87,
+            backgroundColor: AppColors.mintioIndigo,
+            shadowColor: const Color(0xFF3B48D8),
+            borderColor: const Color(0xFF3B48D8),
+            textColor: Colors.white,
             icon: Icons.check_circle_rounded,
             label: 'บันทึกรายการด่วน',
             height: 48,
